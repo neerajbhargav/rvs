@@ -113,7 +113,21 @@ export default function OnboardingPage() {
   const [zip, setZip] = useState("");
   const [birthdate, setBirthdate] = useState("");
 
-  useEffect(() => { fetch("/api/config").then(r => r.json()).then(setConfig); }, []);
+  useEffect(() => { 
+    fetch("/api/config")
+      .then(async r => {
+        if (!r.ok) {
+          const err = await r.text();
+          throw new Error(err);
+        }
+        return r.json();
+      })
+      .then(setConfig)
+      .catch(err => {
+        console.error(err);
+        setError("Database connection error. Please ensure Supabase is configured correctly.");
+      });
+  }, []);
 
   const populateFields = useCallback((u: User) => {
     if (u.aboutMe) setAboutMe(u.aboutMe);
