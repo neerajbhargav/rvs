@@ -23,15 +23,20 @@ export async function POST(req: NextRequest) {
     try {
       const user = await createUser(email, password);
       return NextResponse.json(user, { status: 201 });
-    } catch (err: unknown) {
-      // User already exists — treat as login attempt
-      const existing = await getUserByEmail(email);
-      if (existing && existing.password === password) {
-        return NextResponse.json(existing);
+    } catch (err: any) {
+      if (err.message === "User already exists" || err.message?.includes("duplicate key")) {
+        // User already exists — treat as login attempt
+        const existing = await getUserByEmail(email);
+        if (existing && existing.password === password) {
+          return NextResponse.json(existing);
+        }
+        return NextResponse.json({ error: "Email already registered with a different password" }, { status: 409 });
       }
+      
+      console.error("Registration error:", err);
       return NextResponse.json(
-        { error: err instanceof Error ? err.message : "Registration failed" },
-        { status: 409 }
+        { error: err.message || "Registration failed" },
+        { status: 500 }
       );
     }
   } catch {

@@ -39,11 +39,14 @@ function mapUser(row: any): User {
 
 // ─── User operations ────────────────────────────────────
 export async function createUser(email: string, password: string): Promise<User> {
-  const { data: existing } = await supabase.from('users').select('*').eq('email', email).single();
+  const { data: existing } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
   if (existing) throw new Error("User already exists");
 
   const { data, error } = await supabase.from('users').insert([{ email, password, step: 2 }]).select().single();
-  if (error) throw error;
+  if (error) {
+    console.error("Supabase insert error:", error);
+    throw new Error(error.message);
+  }
   return mapUser(data);
 }
 
