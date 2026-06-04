@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --ink: #1a1a1a;
+  --ink-soft: #3d3d3d;
+  --muted: #6b6b6b;
+  --subtle: #a8a39a;
+  --border: #e5dfd2;
+  --border-soft: #efeae0;
+  --accent: #1d4d3e;
+  --accent-hover: #2d6b56;
+  --accent-soft: #e8f0ec;
+  --accent-muted: #10b981;
+  --gold: #a68838;
+  --gold-bg: #fef9ee;
+  --warning: #b45309;
+  --warning-bg: #fef3e2;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.mono {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.anim-in { animation: fadeUp 0.3s ease-out; }
+.pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+
+.scroll::-webkit-scrollbar { width: 6px; }
+.scroll::-webkit-scrollbar-track { background: transparent; }
+.scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
