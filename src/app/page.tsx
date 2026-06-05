@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Confetti from "react-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -84,6 +84,10 @@ function DynamicField({ comp, formData, setFormData }: { comp: ComponentConfig; 
   const inputClass = "w-full rounded-xl px-4 py-3.5 text-sm transition-colors duration-200 bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--ink)] focus:bg-[var(--surface)] outline-none shadow-sm";
   const labelClass = "block text-[10px] font-bold uppercase tracking-widest mb-2 text-[var(--ink-soft)] display-font";
 
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
   switch (comp.type) {
     case "about_me":
       return (
@@ -133,12 +137,57 @@ function DynamicField({ comp, formData, setFormData }: { comp: ComponentConfig; 
               Auto-fill from Location
             </button>
           </div>
-          <input
-            value={formData.street || ""}
-            onChange={(e) => setFormData((p) => ({ ...p, street: e.target.value }))}
-            placeholder="123 Innovation Drive"
-            className={inputClass}
-          />
+          <div className="relative">
+            <input
+              value={formData.street || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFormData((p) => ({ ...p, street: val }));
+                
+                if (debounceRef.current) clearTimeout(debounceRef.current);
+                
+                if (val.length > 3) {
+                  debounceRef.current = setTimeout(async () => {
+                    try {
+                      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&addressdetails=1&limit=4`);
+                      const data = await res.json();
+                      setSuggestions(data);
+                      setShowSuggestions(true);
+                    } catch (err) {}
+                  }, 400);
+                } else {
+                  setShowSuggestions(false);
+                }
+              }}
+              onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              placeholder="123 Innovation Drive"
+              className={inputClass}
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 w-full mt-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg z-50 overflow-hidden max-h-48 custom-scrollbar overflow-y-auto">
+                {suggestions.map((s, i) => (
+                  <div 
+                    key={i} 
+                    className="p-3 text-xs cursor-pointer hover:bg-[var(--bg)] border-b border-[var(--border-soft)] last:border-b-0 text-[var(--ink)] truncate"
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // Prevent blur
+                      setFormData(p => ({
+                        ...p,
+                        street: `${s.address?.house_number || ""} ${s.address?.road || ""}`.trim() || s.address?.suburb || s.name || "",
+                        city: s.address?.city || s.address?.town || s.address?.village || "",
+                        state: s.address?.state || "",
+                        zip: s.address?.postcode || ""
+                      }));
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    {s.display_name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-3 gap-4">
             <input value={formData.city || ""} onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))} placeholder="City" className={inputClass} />
             <input value={formData.state || ""} onChange={(e) => setFormData((p) => ({ ...p, state: e.target.value }))} placeholder="State" className={inputClass} />
