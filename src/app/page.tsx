@@ -408,7 +408,39 @@ export default function OnboardingPage() {
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                     </motion.div>
                     <h2 className="text-2xl font-bold display-font mb-2 text-[var(--ink)]">Setup Complete!</h2>
-                    <p className="text-sm text-[var(--muted)] mb-8 font-medium">Your profile data has been securely saved to PostgreSQL.</p>
+                    <p className="text-sm text-[var(--muted)] mb-6 font-medium">Your profile data has been securely saved to PostgreSQL.</p>
+                    
+                    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 text-left mb-8 max-h-[40vh] overflow-y-auto custom-scrollbar shadow-inner text-sm">
+                      <h3 className="text-[10px] uppercase font-bold tracking-widest text-[var(--muted)] mb-3 border-b border-[var(--border)] pb-2">Profile Receipt</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-[var(--muted)] font-medium">Email</span>
+                          <span className="font-bold text-[var(--ink)] truncate ml-4">{email}</span>
+                        </div>
+                        {formData.aboutMe && (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[var(--muted)] font-medium">About Me</span>
+                            <span className="font-semibold text-[var(--ink)] text-xs bg-[var(--bg)] p-2 rounded border border-[var(--border)]">{formData.aboutMe}</span>
+                          </div>
+                        )}
+                        {formData.street && (
+                          <div className="flex justify-between">
+                            <span className="text-[var(--muted)] font-medium">Address</span>
+                            <span className="font-bold text-[var(--ink)] text-right">
+                              {formData.street}<br/>
+                              {formData.city}, {formData.state} {formData.zip}
+                            </span>
+                          </div>
+                        )}
+                        {formData.birthdate && (
+                          <div className="flex justify-between">
+                            <span className="text-[var(--muted)] font-medium">Birthdate</span>
+                            <span className="font-bold text-[var(--ink)]">{formData.birthdate}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="flex gap-3 justify-center">
                       <button onClick={() => window.location.href = '/dashboard'} className="btn-primary shadow-sm hover:-translate-y-0.5 transition-transform">View Dashboard</button>
                       <button onClick={() => window.location.href = '/admin'} className="btn-secondary shadow-sm hover:-translate-y-0.5 transition-transform">View Admin</button>
