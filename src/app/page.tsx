@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Confetti from "react-confetti";
-import { Calendar, Car, Coffee, Sprout, Camera, Flag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ComponentConfig {
@@ -11,7 +10,6 @@ interface ComponentConfig {
   label: string;
 }
 interface PageConfig {
-  page1: ComponentConfig[];
   page2: ComponentConfig[];
   page3: ComponentConfig[];
 }
@@ -41,7 +39,7 @@ function StepIndicator({ current, setStep }: { current: number, setStep: (s: num
         return (
           <div key={label} className="flex flex-col items-center flex-1 relative">
             <div
-              className={`h-1 w-full absolute top-3 -left-1/2 -z-10 ${i === 0 ? 'hidden' : ''}`}
+              className={`h-1 w-full absolute top-3 -left-1/2 -z-10 ${i === 0 ? 'hidden' : ''} transition-colors duration-500`}
               style={{ background: done || active ? "var(--ink)" : "var(--border-soft)" }}
             />
             <button
@@ -62,7 +60,7 @@ function StepIndicator({ current, setStep }: { current: number, setStep: (s: num
               )}
             </button>
             <span
-              className="mt-3 text-[10px] uppercase tracking-wider font-semibold display-font"
+              className="mt-3 text-[10px] uppercase tracking-wider font-semibold display-font transition-colors duration-300"
               style={{ color: active ? "var(--ink)" : "var(--muted)" }}
             >
               {label}
@@ -70,74 +68,6 @@ function StepIndicator({ current, setStep }: { current: number, setStep: (s: num
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function AnimatedJourney({ step }: { step: number }) {
-  const points = [
-    { s: 1, Icon: Coffee, color: "var(--ink)" },
-    { s: 2, Icon: Sprout, color: "var(--petronas-teal)" },
-    { s: 3, Icon: Camera, color: "var(--mclaren-papaya)" },
-    { s: 4, Icon: Flag, color: "var(--ferrari-red)" }
-  ];
-
-  const currentPercent = ((step - 1) / 3) * 100;
-
-  return (
-    <div className="mt-16 relative w-full pt-8 pb-4">
-      {/* Background Track Line */}
-      <div className="absolute bottom-6 left-0 right-0 h-0.5 bg-[var(--border)] rounded-full" />
-      {/* Active Track Fill */}
-      <motion.div 
-        className="absolute bottom-6 left-0 h-0.5 rounded-full"
-        style={{ background: "var(--ink)", width: `${currentPercent}%` }}
-        initial={{ width: 0 }}
-        animate={{ width: `${currentPercent}%` }}
-        transition={{ type: "spring", stiffness: 60, damping: 15 }}
-      />
-
-      {/* The Car driving on the track */}
-      <motion.div 
-        className="absolute bottom-4 -ml-4 z-20"
-        initial={{ left: "0%" }}
-        animate={{ left: `${currentPercent}%` }}
-        transition={{ type: "spring", stiffness: 60, damping: 15 }}
-      >
-        <Car className="w-8 h-8 text-[var(--ink)] drop-shadow-md" />
-      </motion.div>
-
-      {/* The Effect Stops */}
-      <div className="flex justify-between relative z-10 px-1">
-        {points.map((pt) => {
-          const isActive = step === pt.s;
-          const isPast = step > pt.s;
-          const Icon = pt.Icon;
-          
-          return (
-            <div key={pt.s} className="flex flex-col items-center">
-              <motion.div
-                initial={false}
-                animate={{
-                  scale: isActive ? 1.4 : 1,
-                  y: isActive ? -12 : 0,
-                  opacity: isActive || isPast ? 1 : 0.3,
-                  color: isActive ? pt.color : isPast ? "var(--ink)" : "var(--muted)"
-                }}
-                transition={{ type: "spring", stiffness: 200, damping: 10 }}
-                className="mb-6"
-              >
-                <Icon strokeWidth={isActive ? 2.5 : 2} className="w-5 h-5" />
-              </motion.div>
-              {/* Point on the track */}
-              <div 
-                className="w-2.5 h-2.5 rounded-full z-10 transition-colors duration-500" 
-                style={{ background: isActive || isPast ? "var(--ink)" : "var(--border)", border: "2px solid var(--bg)", marginTop: 10 }}
-              />
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -179,17 +109,14 @@ function DynamicField({ comp, formData, setFormData }: { comp: ComponentConfig; 
       );
     case "birthdate":
       return (
-        <div className="anim-in relative">
+        <div className="anim-in">
           <label className={labelClass}>{comp.label}</label>
-          <div className="relative">
-            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)] pointer-events-none" />
-            <input
-              type="date"
-              value={formData.birthdate || ""}
-              onChange={(e) => setFormData((p) => ({ ...p, birthdate: e.target.value }))}
-              className={`${inputClass} pl-10`}
-            />
-          </div>
+          <input
+            type="date"
+            value={formData.birthdate || ""}
+            onChange={(e) => setFormData((p) => ({ ...p, birthdate: e.target.value }))}
+            className={inputClass}
+          />
         </div>
       );
     default:
@@ -210,6 +137,9 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
   const [configLoading, setConfigLoading] = useState(true);
 
+  // Track the previous step to determine sliding direction
+  const [prevStep, setPrevStep] = useState(1);
+
   useEffect(() => {
     fetch("/api/config")
       .then((r) => r.json())
@@ -217,6 +147,11 @@ export default function OnboardingPage() {
       .catch(() => setError("Failed to load configuration"))
       .finally(() => setConfigLoading(false));
   }, []);
+
+  const handleSetStep = (newStep: number) => {
+    setPrevStep(step);
+    setStep(newStep);
+  };
 
   const simulateStream = async (messages: string[]) => {
     for (const msg of messages) {
@@ -253,7 +188,7 @@ export default function OnboardingPage() {
       if (user.birthdate) setFormData((p) => ({ ...p, birthdate: user.birthdate! }));
 
       await streamPromise; 
-      setStep(Math.max(2, Math.min(user.step || 2, 4)));
+      handleSetStep(Math.max(2, Math.min(user.step || 2, 4)));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create account");
     } finally { 
@@ -278,7 +213,7 @@ export default function OnboardingPage() {
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Error");
       
       await streamPromise;
-      setStep(nextStep);
+      handleSetStep(nextStep);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save progress");
     } finally { 
@@ -287,14 +222,13 @@ export default function OnboardingPage() {
     }
   };
 
-  const currentComponents = step === 1 ? config?.page1 : step === 2 ? config?.page2 : step === 3 ? config?.page3 : [];
+  const currentComponents = step === 2 ? config?.page2 : step === 3 ? config?.page3 : [];
   
-  // Background Tint Logic
   const getTint = () => {
     if (step === 1) return "rgba(0,0,0,0)";
-    if (step === 2) return "rgba(0, 161, 155, 0.03)"; // Petronas Teal Tint
-    if (step === 3) return "rgba(255, 128, 0, 0.03)"; // Papaya Tint
-    return "rgba(239, 26, 45, 0.03)"; // Ferrari Red Tint
+    if (step === 2) return "rgba(0, 161, 155, 0.03)"; 
+    if (step === 3) return "rgba(255, 128, 0, 0.03)"; 
+    return "rgba(239, 26, 45, 0.03)"; 
   };
 
   const getBorderTop = () => {
@@ -304,16 +238,24 @@ export default function OnboardingPage() {
     return "3px solid var(--ferrari-red)";
   };
 
+  // Determine direction for graceful sliding animation
+  const slideDirection = step > prevStep ? 1 : -1;
+  const slideVariants = {
+    hidden: { opacity: 0, x: slideDirection * 40 },
+    visible: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: slideDirection * -40 }
+  };
+
   return (
-    <div className="mx-auto max-w-lg px-6 py-16 flex flex-col min-h-screen justify-center">
-      {step === 4 && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={600} colors={['#00A19B', '#FF8000', '#EF1A2D', '#001A30']} gravity={0.15} />}
+    <div className="mx-auto max-w-lg px-6 py-16 flex flex-col min-h-screen justify-center overflow-x-hidden">
+      {step === 4 && <Confetti width={typeof window !== 'undefined' ? window.innerWidth : 1000} height={typeof window !== 'undefined' ? window.innerHeight : 1000} recycle={false} numberOfPieces={600} colors={['#00A19B', '#FF8000', '#EF1A2D', '#001A30']} gravity={0.15} />}
       
       <div className="mb-12 text-center anim-in">
         <h1 className="text-3xl font-bold display-font mb-2 text-[var(--ink)] tracking-tight">SupportIQ</h1>
         <p className="text-sm text-[var(--muted)] font-medium">Configure your workspace</p>
       </div>
 
-      <StepIndicator current={step} setStep={setStep} />
+      <StepIndicator current={step} setStep={handleSetStep} />
 
       {error && (
         <div className="mb-6 rounded-xl px-4 py-3 text-sm font-medium anim-fade border border-[var(--error)] bg-[var(--error-bg)] text-[var(--error)] shadow-sm">
@@ -321,19 +263,21 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* Dynamic Background Tint and Border */}
+      {/* Elegant Swooping Form Container */}
       <motion.div 
+        layout
         animate={{ backgroundColor: getTint(), borderTop: getBorderTop() }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="glass p-8 anim-in shadow-sm"
+        transition={{ duration: 0.8, ease: "easeOut", layout: { duration: 0.4, ease: "easeInOut" } }}
+        className="glass p-8 shadow-sm overflow-hidden"
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div 
-            key={step} 
-            initial={{ opacity: 0, x: 20 }} 
-            animate={{ opacity: 1, x: 0 }} 
-            exit={{ opacity: 0, x: -20 }} 
-            transition={{ duration: 0.3 }}
+            key={step}
+            variants={slideVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             {configLoading && step < 4 ? (
                <div className="flex justify-center py-12">
@@ -341,7 +285,7 @@ export default function OnboardingPage() {
                </div>
             ) : (
               <>
-                {/* STEP 1: Email/Password + Optional Dynamic Page 1 Fields */}
+                {/* STEP 1: Email/Password Baseline */}
                 {step === 1 && (
                   <div className="space-y-6">
                     <div>
@@ -352,9 +296,6 @@ export default function OnboardingPage() {
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 text-[var(--ink-soft)] display-font">Password</label>
                       <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full rounded-xl px-4 py-3.5 text-sm bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--ink)] focus:bg-[var(--surface)] outline-none shadow-sm transition-colors duration-200" onKeyDown={(e) => e.key === "Enter" && handleStep1()} disabled={loading} />
                     </div>
-                    
-                    {/* Render Page 1 Configured Fields */}
-                    {currentComponents?.map((comp) => <DynamicField key={comp.id} comp={comp} formData={formData} setFormData={setFormData} />)}
 
                     <button onClick={handleStep1} disabled={loading} className="btn-primary w-full mt-4 h-12 flex justify-center items-center shadow-sm">
                       {loading ? <div className="h-5 w-5 rounded-full border-[3px] border-white border-t-transparent animate-spin"></div> : "Continue"}
@@ -369,7 +310,7 @@ export default function OnboardingPage() {
                     {(!currentComponents || currentComponents.length === 0) && <p className="text-center py-8 text-[var(--muted)] text-sm font-medium">No fields configured for this step.</p>}
                     
                     <div className="flex gap-4 mt-8">
-                      <button onClick={() => setStep(step - 1)} disabled={loading} className="btn-secondary w-1/3 shadow-sm">Back</button>
+                      <button onClick={() => handleSetStep(step - 1)} disabled={loading} className="btn-secondary w-1/3 shadow-sm">Back</button>
                       <button onClick={() => handleStepSubmit(step + 1)} disabled={loading} className="btn-primary flex-1 flex justify-center items-center shadow-sm">
                         {loading ? <div className="h-5 w-5 rounded-full border-[3px] border-white border-t-transparent animate-spin"></div> : step === 3 ? "Complete" : "Continue"}
                       </button>
@@ -414,9 +355,6 @@ export default function OnboardingPage() {
           </AnimatePresence>
         </div>
       </motion.div>
-
-      {/* The Animated Car Journey Tracker */}
-      <AnimatedJourney step={step} />
       
     </div>
   );
