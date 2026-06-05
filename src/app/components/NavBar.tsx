@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 function ThemeToggle() {
@@ -71,6 +71,7 @@ const navItems = [
 
 export default function NavBar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <nav
@@ -79,7 +80,7 @@ export default function NavBar() {
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo */}
-        <button onClick={() => window.location.href = '/'} className="flex items-center gap-2 group cursor-pointer outline-none">
+        <Link href="/?edit=true" className="flex items-center gap-2 group cursor-pointer outline-none">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--ink)]">
               <span className="text-[var(--bg)] font-bold text-lg display-font leading-none" style={{ marginLeft: 2, marginTop: -2 }}>IQ*</span>
@@ -88,23 +89,23 @@ export default function NavBar() {
               NewCo
             </span>
           </div>
-        </button>
+        </Link>
 
         {/* Links + Toggle */}
         <div className="flex items-center gap-2">
           {pathname !== "/" && navItems.map((item) => {
             const isActive = pathname === item.href;
             return item.href === "/" ? (
-              <button
+              <Link
                 key={item.href}
-                onClick={() => window.location.href = '/?edit=true'}
+                href="/?edit=true"
                 className="relative rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 outline-none"
                 style={{ color: "var(--muted)", background: "transparent" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = "var(--muted)"; }}
               >
                 {item.label}
-              </button>
+              </Link>
             ) : (
               <Link
                 key={item.href}
