@@ -1,28 +1,43 @@
 "use client";
 
 import { useChat } from "ai/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CHART_DATA = [
-  { time: "08:00", saved: 120, baseline: 550 },
-  { time: "10:00", saved: 350, baseline: 550 },
-  { time: "12:00", saved: 680, baseline: 550 },
-  { time: "14:00", saved: 520, baseline: 550 },
-  { time: "16:00", saved: 890, baseline: 550 },
-  { time: "18:00", saved: 710, baseline: 550 },
-];
-
 const QUICK_ACTIONS = [
-  { id: "policy", label: "Check Refund Policy", prompt: "What is the policy for refunds?" },
-  { id: "record", label: "Look up my record", prompt: "Can you look up the patient record for test@newco.com?" },
+  { id: "policy", label: "Check Refund Policy", prompt: "What is the policy for refunds? Show the policy card." },
+  { id: "record", label: "Look up my record", prompt: "Can you look up the patient record for test@newco.com? Render a record card." },
   { id: "escalate", label: "Billing Dispute", prompt: "I was double charged $150 and want a refund." },
 ];
 
 export default function DashboardPage() {
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } = useChat();
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // --- ROI Sandbox State ---
+  const [monthlyVolume, setMonthlyVolume] = useState(5000);
+  const [humanCost, setHumanCost] = useState(5.50);
+
+  // Derived Sandbox Metrics
+  const metrics = useMemo(() => {
+    const aiCost = 1.30;
+    const deflectionRate = 0.87;
+    const deflected = Math.floor(monthlyVolume * deflectionRate);
+    const humanTotal = deflected * humanCost;
+    const aiTotal = deflected * aiCost;
+    const savings = humanTotal - aiTotal;
+    
+    // Generate dynamic chart data based on volume
+    const baseCurve = [0.2, 0.6, 1.0, 0.8, 1.5, 1.2]; // activity curve
+    const chartData = baseCurve.map((mult, i) => ({
+      time: `${8 + i * 2}:00`,
+      saved: Math.floor((deflected / 30) * mult), // daily spread
+      baseline: Math.floor((monthlyVolume / 30) * 0.5)
+    }));
+
+    return { deflected, savings, chartData, aiCost, deflectionRate };
+  }, [monthlyVolume, humanCost]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,7 +50,7 @@ export default function DashboardPage() {
   const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Time,Sessions Deflected,Baseline Expected\n"
-      + CHART_DATA.map(e => `${e.time},${e.saved},${e.baseline}`).join("\n");
+      + metrics.chartData.map(e => `${e.time},${e.saved},${e.baseline}`).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -43,6 +58,46 @@ export default function DashboardPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Generative UI Renderer
+  const renderMessageContent = (content: string) => {
+    if (content.includes("[REFUND_POLICY_CARD]")) {
+      return (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mt-2 p-4 bg-[var(--surface-hover)] border border-[var(--border)] rounded-xl shadow-sm text-[var(--ink)]">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 rounded bg-[var(--petronas-teal)] text-white flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h4 className="font-bold display-font text-sm">Standard Refund Policy</h4>
+          </div>
+          <p className="text-xs text-[var(--muted)] mb-3">Customers are eligible for a full refund within 30 days of purchase, provided the service was not fully utilized.</p>
+          <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-[var(--muted)] border-t border-[var(--border)] pt-2">
+            <span>Policy ID: RF-2026</span>
+            <span className="text-[var(--petronas-teal)]">Active</span>
+          </div>
+        </motion.div>
+      );
+    }
+    if (content.includes("[USER_RECORD_CARD]")) {
+      return (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mt-2 p-4 bg-[var(--surface-hover)] border border-[var(--border)] rounded-xl shadow-sm text-[var(--ink)]">
+          <div className="flex items-center gap-3 mb-3 border-b border-[var(--border)] pb-3">
+            <div className="w-10 h-10 rounded-full bg-[var(--ink)] text-[var(--bg)] flex items-center justify-center font-bold text-sm">T</div>
+            <div>
+              <h4 className="font-bold display-font text-sm">test@newco.com</h4>
+              <p className="text-xs text-[var(--muted)]">Status: Premium Subscriber</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">LTV</span><span className="font-bold">$1,250.00</span></div>
+            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">Last Login</span><span className="font-bold">Today, 08:30 AM</span></div>
+            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">Risk Level</span><span className="font-bold text-[var(--petronas-teal)]">Low</span></div>
+          </div>
+        </motion.div>
+      );
+    }
+    return <div className="leading-relaxed whitespace-pre-wrap text-[13px]">{content}</div>;
   };
 
   return (
@@ -65,20 +120,42 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* 2. Consolidated High-Level Ribbon */}
+      {/* 2. Interactive ROI Sandbox Ribbon */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex w-full shrink-0 mb-4 rounded-xl border border-[var(--border)] bg-[var(--bg)] shadow-sm divide-x divide-[var(--border)]">
+        
+        {/* Sandbox Controls */}
+        <div className="flex-1 px-5 py-3 flex flex-col justify-center bg-[var(--surface-hover)] rounded-l-xl">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-[var(--petronas-teal)] display-font mb-2 flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Interactive ROI Sandbox
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <div className="flex justify-between text-[10px] text-[var(--muted)] mb-1">
+                <span>Volume</span><span>{monthlyVolume.toLocaleString()}</span>
+              </div>
+              <input type="range" min="500" max="50000" step="500" value={monthlyVolume} onChange={(e) => setMonthlyVolume(Number(e.target.value))} className="w-full accent-[var(--ink)]" />
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between text-[10px] text-[var(--muted)] mb-1">
+                <span>Human Cost</span><span>${humanCost.toFixed(2)}</span>
+              </div>
+              <input type="range" min="2" max="25" step="0.5" value={humanCost} onChange={(e) => setHumanCost(Number(e.target.value))} className="w-full accent-[var(--mclaren-papaya)]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Metrics */}
         {[
-          { label: "Active Sessions", value: "1,204", trend: "+12%" },
-          { label: "Avg Resolution", value: "4s", trend: "-85%" },
-          { label: "Deflection Rate", value: "87.3%", trend: "+5%" },
-          { label: "Human Cost (Avg)", value: "$5.50", color: "var(--mclaren-papaya)" },
-          { label: "AI Cost (Avg)", value: "$1.30", color: "var(--petronas-teal)" },
-          { label: "Net Savings", value: "$4.20", color: "var(--ink)", isTotal: true },
+          { label: "Est. Deflections", value: metrics.deflected.toLocaleString(), trend: `${(metrics.deflectionRate * 100).toFixed(1)}% Rate` },
+          { label: "Human Total", value: `$${(metrics.deflected * humanCost).toLocaleString()}`, color: "var(--mclaren-papaya)" },
+          { label: "AI Total", value: `$${(metrics.deflected * metrics.aiCost).toLocaleString()}`, color: "var(--petronas-teal)" },
+          { label: "Net Savings (Mo)", value: `$${metrics.savings.toLocaleString()}`, color: "var(--ink)", isTotal: true },
         ].map((stat, i) => (
-          <div key={stat.label} className={`flex-1 px-4 py-3 ${stat.isTotal ? 'bg-[var(--surface-hover)]' : ''}`}>
+          <div key={stat.label} className={`px-5 py-3 flex flex-col justify-center min-w-[140px] ${stat.isTotal ? 'bg-[var(--surface-hover)] rounded-r-xl' : ''}`}>
             <div className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)] display-font mb-1">{stat.label}</div>
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold display-font" style={{ color: stat.color || "var(--ink)" }}>{stat.value}</span>
+              <motion.span key={stat.value} initial={{ opacity: 0.5, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xl font-bold display-font" style={{ color: stat.color || "var(--ink)" }}>{stat.value}</motion.span>
               {stat.trend && <span className="text-[10px] font-bold text-[var(--petronas-teal)]">{stat.trend}</span>}
             </div>
           </div>
@@ -95,7 +172,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex-1 w-full p-4 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={CHART_DATA} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+              <AreaChart data={metrics.chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSaved" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--petronas-teal)" stopOpacity={0.4}/>
@@ -115,7 +192,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Center: Simulator Stream Pane */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="w-2/4 rounded-xl border border-[var(--border)] bg-[var(--bg)] flex flex-col shadow-sm">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="w-2/4 rounded-xl border border-[var(--border)] bg-[var(--bg)] flex flex-col shadow-sm relative">
           <div className="flex items-center justify-between px-4 py-3 shrink-0 border-b border-[var(--border)] bg-[var(--surface-hover)] rounded-t-xl">
             <span className="font-bold text-[10px] uppercase tracking-wider display-font text-[var(--ink)]">Live Simulator Stream</span>
             <span className="text-[9px] font-bold tracking-wider display-font px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--petronas-teal)]">OPENAI GPT-4O</span>
@@ -128,7 +205,7 @@ export default function DashboardPage() {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--petronas-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 </motion.div>
                 <h3 className="font-bold text-base display-font mb-2 text-[var(--ink)]">Start Simulation</h3>
-                <p className="text-xs mb-6 text-[var(--muted)] max-w-[280px]">Test autonomous tool execution directly against the live database.</p>
+                <p className="text-xs mb-6 text-[var(--muted)] max-w-[280px]">Test generative UI and tool execution directly against the mock database.</p>
                 <div className="flex flex-col gap-2 w-full max-w-[250px]">
                   {QUICK_ACTIONS.map(action => (
                     <motion.button key={action.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => append({ role: "user", content: action.prompt })} className="w-full text-left px-3 py-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-xs font-semibold text-[var(--ink-soft)] hover:border-[var(--petronas-teal)] hover:text-[var(--petronas-teal)] transition-colors">
@@ -146,7 +223,7 @@ export default function DashboardPage() {
                     <div className="h-7 w-7 rounded flex items-center justify-center text-[9px] font-bold mr-3 shrink-0 display-font bg-[var(--petronas-teal)] text-white shadow-sm mt-0.5">IQ</div>
                   )}
                   <div className="max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm" style={{ background: m.role === "user" ? "var(--ink)" : "var(--bg)", color: m.role === "user" ? "var(--bg)" : "var(--ink)", border: m.role === "assistant" ? "1px solid var(--border)" : "none", borderBottomRightRadius: m.role === "user" ? 4 : undefined, borderBottomLeftRadius: m.role === "assistant" ? 4 : undefined }}>
-                    {m.content && <div className="leading-relaxed whitespace-pre-wrap text-[13px]">{m.content}</div>}
+                    {m.content && renderMessageContent(m.content)}
                     
                     {/* GENERATIVE UI TOOL STREAM */}
                     {m.toolInvocations && m.toolInvocations.map(tool => (
@@ -184,9 +261,9 @@ export default function DashboardPage() {
             <div ref={chatEndRef} className="h-1" />
           </div>
 
-          <form onSubmit={handleSubmit} className="p-3 shrink-0 border-t border-[var(--border)] bg-[var(--bg)] rounded-b-xl">
+          <form onSubmit={handleSubmit} className="p-3 shrink-0 border-t border-[var(--border)] bg-[var(--bg)] rounded-b-xl z-10">
             <div className="flex gap-2">
-              <input value={input} onChange={handleInputChange} placeholder="Prompt the agent..." disabled={isLoading} className="flex-1 rounded-lg px-3 py-2 text-[13px] bg-[var(--surface-hover)] border border-transparent text-[var(--ink)] focus:border-[var(--petronas-teal)] focus:bg-[var(--bg)] outline-none shadow-inner transition-colors" />
+              <input value={input} onChange={handleInputChange} placeholder="Prompt the agent (try 'show policy card')..." disabled={isLoading} className="flex-1 rounded-lg px-3 py-2 text-[13px] bg-[var(--surface-hover)] border border-transparent text-[var(--ink)] focus:border-[var(--petronas-teal)] focus:bg-[var(--bg)] outline-none shadow-inner transition-colors" />
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={isLoading || !input.trim()} className="btn-primary px-4 h-auto py-2 text-[13px] rounded-lg">Send</motion.button>
             </div>
           </form>
@@ -203,7 +280,7 @@ export default function DashboardPage() {
               <div className="text-[9px] font-bold uppercase tracking-widest display-font text-[var(--muted)] mb-1">Architecture Stack</div>
               {[
                 { label: "LLM Routing", value: "Vercel AI SDK Core" },
-                { label: "Streaming UI", value: "React useChat + Framer" },
+                { label: "Streaming UI", value: "React useChat + Generative UI" },
                 { label: "Database", value: "PostgreSQL (Prisma)" },
               ].map((item) => (
                 <div key={item.label} className="flex flex-col py-2 px-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface-hover)]">
