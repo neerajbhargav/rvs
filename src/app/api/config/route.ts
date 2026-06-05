@@ -10,9 +10,9 @@ export async function GET() {
       });
     }
     return NextResponse.json(config);
-  } catch (error) {
+  } catch (error: any) {
     console.error("GET /api/config error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
   }
 }
 
@@ -54,8 +54,8 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json(config);
-  } catch (error) {
+  } catch (error: any) {
     console.error("PUT /api/config error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
   }
 }

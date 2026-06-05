@@ -40,9 +40,9 @@ export async function POST(req: NextRequest) {
       }
       throw err;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST /api/users error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
   }
 }
 
@@ -52,8 +52,8 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(users);
-  } catch (error) {
+  } catch (error: any) {
     console.error("GET /api/users error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
   }
 }
