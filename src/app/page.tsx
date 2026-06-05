@@ -254,7 +254,12 @@ export default function OnboardingPage() {
         if (user.zip) setFormData((p) => ({ ...p, zip: user.zip! }));
         if (user.birthdate) setFormData((p) => ({ ...p, birthdate: user.birthdate! }));
         
-        handleSetStep(Math.max(2, Math.min(user.step || 2, 4)));
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("edit") === "true") {
+          handleSetStep(2);
+        } else {
+          handleSetStep(Math.max(2, Math.min(user.step || 2, 4)));
+        }
       })
       .catch(() => {
         // Normal behavior, user not logged in

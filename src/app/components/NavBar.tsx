@@ -97,7 +97,7 @@ export default function NavBar() {
             return item.href === "/" ? (
               <button
                 key={item.href}
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = '/?edit=true'}
                 className="relative rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 outline-none"
                 style={{ color: "var(--muted)", background: "transparent" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink)"; }}
