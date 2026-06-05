@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,6 +16,8 @@ export async function POST(req: NextRequest) {
       if (!user || user.password !== password) {
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
+      const cookieStore = await cookies();
+      cookieStore.set("supportiq_session", user.id, { path: "/", httpOnly: true });
       return NextResponse.json(user);
     }
 
@@ -23,6 +26,8 @@ export async function POST(req: NextRequest) {
       const user = await prisma.user.create({
         data: { email, password, step: 2 },
       });
+      const cookieStore = await cookies();
+      cookieStore.set("supportiq_session", user.id, { path: "/", httpOnly: true });
       return NextResponse.json(user, { status: 201 });
     } catch (err: unknown) {
       // Handle unique constraint violation (email already exists)
@@ -34,6 +39,8 @@ export async function POST(req: NextRequest) {
       ) {
         const existing = await prisma.user.findUnique({ where: { email } });
         if (existing && existing.password === password) {
+          const cookieStore = await cookies();
+          cookieStore.set("supportiq_session", existing.id, { path: "/", httpOnly: true });
           return NextResponse.json(existing);
         }
         return NextResponse.json({ error: "Email already registered" }, { status: 409 });

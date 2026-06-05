@@ -20,8 +20,21 @@ model User {
   zip       String?
   birthdate String?
   createdAt DateTime @default(now()) @map("created_at")
+  messages  Message[]
 
   @@map("users")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  role      String
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }
 
 model PageConfig {

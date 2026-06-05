@@ -181,7 +181,7 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto max-w-lg px-6 py-16">
       <div className="mb-12 text-center anim-in">
-        <h1 className="text-3xl font-bold display-font mb-2 text-[var(--ink)]">SupportIQ</h1>
+        <h1 className="text-3xl font-bold display-font mb-2 text-[var(--ink)]">NewCo</h1>
         <p className="text-sm text-[var(--muted)]">Create your account</p>
       </div>
 

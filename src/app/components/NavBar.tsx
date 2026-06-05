@@ -80,16 +80,14 @@ export default function NavBar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div
-            className="flex h-6 w-6 items-center justify-center rounded bg-[var(--ink)] text-[var(--bg)] transition-transform duration-300 group-hover:-rotate-6 group-active:scale-90"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3l1.5 4.5H18l-3.5 2.5L16 14.5 12 12l-4 2.5 1.5-4.5L6 7.5h4.5z" />
-            </svg>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--ink)]">
+              <span className="text-[var(--bg)] font-bold text-lg display-font leading-none" style={{ marginLeft: 2, marginTop: -2 }}>IQ*</span>
+            </div>
+            <span className="font-bold text-lg tracking-tight display-font" style={{ color: "var(--ink)" }}>
+              NewCo
+            </span>
           </div>
-          <span className="text-lg font-bold tracking-tight display-font" style={{ color: "var(--ink)" }}>
-            SupportIQ
-          </span>
         </Link>
 
         {/* Links + Toggle */}
