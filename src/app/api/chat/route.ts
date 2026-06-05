@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
           parameters: z.object({
             topic: z.enum(["appointments", "insurance", "prescriptions", "refunds", "hours", "general"]),
           }),
-          // @ts-expect-error - AI SDK type inference issue
           execute: async ({ topic }) => {
             // Simulated retrieval
             const kb: Record<string, string> = {
@@ -59,7 +58,6 @@ export async function POST(req: NextRequest) {
             reason: z.string().describe("The reason for escalation"),
             priority: z.enum(["high", "medium", "low"])
           }),
-          // @ts-expect-error - AI SDK type inference issue
           execute: async ({ reason, priority }) => {
             return `Ticket created successfully. Priority: ${priority}. Reason: ${reason}. A human agent will take over shortly.`;
           }
@@ -67,7 +65,6 @@ export async function POST(req: NextRequest) {
         lookup_patient_record: tool({
           description: "Look up a patient's record by email.",
           parameters: z.object({ email: z.string() }),
-          // @ts-expect-error - AI SDK type inference issue
           execute: async ({ email }) => {
             const user = await prisma.user.findUnique({ where: { email } });
             if (!user) return "Patient not found in database.";
