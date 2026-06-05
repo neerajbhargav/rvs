@@ -1,95 +1,229 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-interface PageConfig { aboutMe: number; address: number; birthdate: number; }
-type ComponentKey = "aboutMe" | "address" | "birthdate";
+interface ComponentConfig {
+  id: string;
+  type: string;
+  label: string;
+}
+interface PageConfig {
+  page2: ComponentConfig[];
+  page3: ComponentConfig[];
+}
 
-const LABELS: Record<ComponentKey, { name: string; desc: string; icon: string }> = {
-  aboutMe: { name: "About Me", desc: "Large text area for user bio", icon: "📝" },
-  address: { name: "Address", desc: "Street, city, state, zip fields", icon: "📍" },
-  birthdate: { name: "Birthdate", desc: "Date selection input", icon: "📅" },
+const COMP_META: Record<string, { icon: string; desc: string }> = {
+  about_me: { icon: "📝", desc: "Free-text field for users to describe themselves" },
+  address: { icon: "📍", desc: "Street, city, state, and ZIP code fields" },
+  birthdate: { icon: "📅", desc: "Date picker for date of birth" },
 };
 
 export default function AdminPage() {
   const [config, setConfig] = useState<PageConfig | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => { fetch("/api/config").then(r => r.json()).then(setConfig); }, []);
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((d) => setConfig(d))
+      .catch(() => setError("Failed to load configuration"))
+      .finally(() => setLoading(false));
+  }, []);
 
-  function toggle(key: ComponentKey) {
+  const moveComponent = (compId: string, from: "page2" | "page3") => {
     if (!config) return;
-    const next = config[key] === 2 ? 3 : 2;
-    const newConfig = { ...config, [key]: next };
-    const p2 = (Object.keys(newConfig) as ComponentKey[]).filter(k => newConfig[k] === 2).length;
-    const p3 = (Object.keys(newConfig) as ComponentKey[]).filter(k => newConfig[k] === 3).length;
-    if (p2 === 0 || p3 === 0) { setError("Each page must have at least one component."); setTimeout(() => setError(""), 2500); return; }
-    setConfig(newConfig); setError(""); setSaved(false);
-  }
+    setError("");
+    setSaved(false);
 
-  async function save() {
+    const to = from === "page2" ? "page3" : "page2";
+    const sourceComps = config[from];
+    const comp = sourceComps.find((c) => c.id === compId);
+    if (!comp) return;
+
+    // Validate: can't leave a page empty
+    if (sourceComps.length <= 1) {
+      setError(`Cannot move — ${from === "page2" ? "Page 2" : "Page 3"} must have at least one component.`);
+      return;
+    }
+
+    setConfig({
+      ...config,
+      [from]: sourceComps.filter((c) => c.id !== compId),
+      [to]: [...config[to], comp],
+    });
+  };
+
+  const handleSave = async () => {
     if (!config) return;
-    setSaving(true); setError("");
+    setSaving(true);
+    setError("");
+    setSaved(false);
+
     try {
-      const res = await fetch("/api/config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config) });
-      if (!res.ok) { const d = await res.json(); setError(d.error || "Failed"); }
-      else { setSaved(true); setTimeout(() => setSaved(false), 2000); }
-    } catch { setError("Network error"); }
-    setSaving(false);
+      const res = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setError("Failed to save configuration");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="animate-spin">
+          <circle cx="12" cy="12" r="10" stroke="var(--border)" strokeWidth="3" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      </div>
+    );
   }
 
-  if (!config) return <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" /></div>;
+  const renderPage = (pageKey: "page2" | "page3", pageNum: number) => {
+    const comps = config?.[pageKey] || [];
+    const otherPage = pageKey === "page2" ? 3 : 2;
 
-  const page2 = (Object.keys(config) as ComponentKey[]).filter(k => config[k] === 2);
-  const page3 = (Object.keys(config) as ComponentKey[]).filter(k => config[k] === 3);
-
-  const card = (key: ComponentKey) => {
-    const c = LABELS[key];
     return (
-      <div key={key} className="anim-in flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition hover:shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">{c.icon}</span>
-          <div>
-            <div className="text-sm font-medium text-[var(--ink)]">{c.name}</div>
-            <div className="text-xs text-[var(--muted)]">{c.desc}</div>
-          </div>
+      <div className="anim-in" style={{ animationDelay: `${pageNum * 0.1}s` }}>
+        <div className="flex items-center gap-2 mb-4">
+          <span
+            className="text-xs font-bold px-2 py-0.5 rounded-md"
+            style={{
+              background: "var(--accent-soft)",
+              color: "var(--accent)",
+            }}
+          >
+            PAGE {pageNum}
+          </span>
+          <span className="text-sm" style={{ color: "var(--muted)" }}>
+            {comps.length} component{comps.length !== 1 ? "s" : ""}
+          </span>
         </div>
-        <button onClick={() => toggle(key)}
-          className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
-          Move to Page {config[key] === 2 ? 3 : 2} →
-        </button>
+
+        <div className="space-y-3">
+          {comps.map((comp) => {
+            const meta = COMP_META[comp.type] || { icon: "📦", desc: "Unknown component" };
+            return (
+              <div
+                key={comp.id}
+                className="glass glass-hover p-5 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl">{meta.icon}</span>
+                  <div>
+                    <h3 className="font-semibold text-sm" style={{ color: "var(--ink)" }}>
+                      {comp.label}
+                    </h3>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                      {meta.desc}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => moveComponent(comp.id, pageKey)}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200"
+                  style={{
+                    color: "var(--accent)",
+                    background: "var(--accent-soft)",
+                    border: "1px solid transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--accent)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "transparent";
+                  }}
+                >
+                  Move to Page {otherPage} →
+                </button>
+              </div>
+            );
+          })}
+          {comps.length === 0 && (
+            <div
+              className="glass p-8 text-center"
+              style={{ borderStyle: "dashed" }}
+            >
+              <p className="text-sm" style={{ color: "var(--subtle)" }}>
+                No components assigned to this page
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      <div className="mb-1 flex items-center gap-2">
-        <span className="mono rounded bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--accent)]">ADMIN</span>
-        <h1 className="text-xl font-semibold text-[var(--ink)]">Onboarding Configuration</h1>
-      </div>
-      <p className="mb-6 text-sm text-[var(--muted)]">Configure which data components appear on each page of the onboarding wizard. Each page must have at least one component.</p>
-      {error && <div className="mb-4 rounded-lg bg-[var(--warning-bg)] px-4 py-3 text-sm text-[var(--warning)]">{error}</div>}
-      <div className="mb-6 space-y-6">
-        <div>
-          <h2 className="mono mb-2 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
-            Page 2 · {page2.length} component{page2.length !== 1 ? "s" : ""}
-          </h2>
-          <div className="space-y-2">{page2.map(card)}</div>
+    <div className="mx-auto max-w-3xl px-6 py-12">
+      {/* Header */}
+      <div className="mb-8 anim-in">
+        <div className="flex items-center gap-3 mb-2">
+          <span
+            className="text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-md"
+            style={{
+              background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-end))",
+              color: "white",
+            }}
+          >
+            ADMIN
+          </span>
         </div>
-        <div>
-          <h2 className="mono mb-2 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
-            Page 3 · {page3.length} component{page3.length !== 1 ? "s" : ""}
-          </h2>
-          <div className="space-y-2">{page3.map(card)}</div>
-        </div>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>
+          Onboarding Configuration
+        </h1>
+        <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+          Drag components between pages to customize the onboarding flow. Each page must have at least one component.
+        </p>
       </div>
-      <button onClick={save} disabled={saving}
-        className="w-full rounded-lg bg-[var(--accent)] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--accent-hover)] disabled:opacity-50">
-        {saving ? "Saving..." : saved ? "✓ Saved!" : "Save Configuration"}
-      </button>
+
+      {/* Error */}
+      {error && (
+        <div
+          className="mb-6 rounded-lg px-4 py-3 text-sm font-medium anim-scale"
+          style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error)" }}
+        >
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Pages */}
+      <div className="space-y-8 mb-8">
+        {renderPage("page2", 2)}
+        {renderPage("page3", 3)}
+      </div>
+
+      {/* Save */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-primary flex items-center gap-2"
+        >
+          {saving ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="animate-spin">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          ) : null}
+          {saving ? "Saving..." : "Save Configuration"}
+        </button>
+        {saved && (
+          <span className="text-sm font-semibold anim-scale" style={{ color: "var(--accent)" }}>
+            ✓ Saved!
+          </span>
+        )}
+      </div>
     </div>
   );
 }

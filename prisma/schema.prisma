@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  step      Int      @default(2)
+  aboutMe   String?  @map("about_me")
+  street    String?
+  city      String?
+  state     String?
+  zip       String?
+  birthdate String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model PageConfig {
+  id        String @id @default("config")
+  aboutMe   Int    @default(2) @map("about_me")
+  address   Int    @default(2)
+  birthdate Int    @default(3)
+
+  @@map("page_config")
+}

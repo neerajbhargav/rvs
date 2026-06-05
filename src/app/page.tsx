@@ -1,279 +1,456 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 
-interface User {
-  id: string; email: string; step: number;
-  aboutMe: string | null; street: string | null; city: string | null;
-  state: string | null; zip: string | null; birthdate: string | null;
+/* ── Types ── */
+interface ComponentConfig {
+  id: string;
+  type: string;
+  label: string;
 }
-interface PageConfig { aboutMe: number; address: number; birthdate: number; }
-type ComponentName = "aboutMe" | "address" | "birthdate";
+interface PageConfig {
+  page2: ComponentConfig[];
+  page3: ComponentConfig[];
+}
+interface UserData {
+  id: string;
+  email: string;
+  step: number;
+  aboutMe?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  birthdate?: string;
+}
 
-function StepIndicator({ current, total }: { current: number; total: number }) {
-  const labels = ["Account", "Profile", "Details", "Complete"];
+/* ── Step indicator ── */
+const STEPS = ["Account", "Profile", "Details", "Complete"];
+
+function StepIndicator({ current }: { current: number }) {
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between">
-        {labels.map((label, i) => (
-          <div key={i} className="flex flex-col items-center gap-2" style={{ flex: 1 }}>
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300"
-              style={{
-                background: i + 1 <= current ? "var(--accent)" : "var(--border)",
-                color: i + 1 <= current ? "white" : "var(--muted)",
-              }}
-            >
-              {i + 1 < current ? (
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-              ) : (
-                i + 1
-              )}
+    <div className="flex items-center justify-center gap-0 mb-10">
+      {STEPS.map((label, i) => {
+        const step = i + 1;
+        const done = current > step;
+        const active = current === step;
+        return (
+          <div key={label} className="flex items-center">
+            {/* circle */}
+            <div className="flex flex-col items-center">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all duration-300"
+                style={{
+                  background: done
+                    ? "linear-gradient(135deg, var(--gradient-start), var(--gradient-end))"
+                    : active
+                    ? "var(--accent-soft)"
+                    : "var(--surface-hover)",
+                  border: active ? "2px solid var(--accent)" : done ? "none" : "2px solid var(--border)",
+                  color: done ? "white" : active ? "var(--accent)" : "var(--subtle)",
+                  boxShadow: active ? "0 0 0 4px var(--accent-glow)" : "none",
+                }}
+              >
+                {done ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  step
+                )}
+              </div>
+              <span
+                className="mt-2 text-xs font-medium"
+                style={{ color: active ? "var(--accent)" : done ? "var(--ink-soft)" : "var(--subtle)" }}
+              >
+                {label}
+              </span>
             </div>
-            <span className="text-xs font-medium" style={{ color: i + 1 <= current ? "var(--accent)" : "var(--muted)" }}>
-              {label}
-            </span>
+            {/* connector */}
+            {i < STEPS.length - 1 && (
+              <div
+                className="h-0.5 transition-all duration-500 mx-2"
+                style={{
+                  width: 64,
+                  background: current > step + 1
+                    ? "linear-gradient(90deg, var(--gradient-start), var(--gradient-end))"
+                    : current > step
+                    ? "var(--accent)"
+                    : "var(--border)",
+                  marginBottom: 24,
+                }}
+              />
+            )}
           </div>
-        ))}
-      </div>
-      <div className="mt-3 flex gap-1">
-        {Array.from({ length: total - 1 }, (_, i) => (
-          <div
-            key={i}
-            className="h-1 flex-1 rounded-full transition-all duration-500"
-            style={{ background: i < current - 1 ? "var(--accent)" : "var(--border)" }}
-          />
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }
 
-function AboutMeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+/* ── Spinner ── */
+function Spinner({ size = 20 }: { size?: number }) {
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-[var(--ink)]">About Me</label>
-      <p className="text-xs text-[var(--muted)]">Tell us a bit about yourself and your role.</p>
-      <textarea
-        value={value} onChange={(e) => onChange(e.target.value)}
-        placeholder="I'm a customer support manager at a growing SaaS company..."
-        rows={5}
-        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/10"
-      />
-    </div>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className="animate-spin">
+      <circle cx="12" cy="12" r="10" stroke="var(--border)" strokeWidth="3" />
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
+    </svg>
   );
 }
 
-function AddressFields({ street, city, state, zip, onChange }: {
-  street: string; city: string; state: string; zip: string;
-  onChange: (f: string, v: string) => void;
+/* ── Dynamic Form Fields ── */
+function DynamicField({
+  comp,
+  formData,
+  setFormData,
+}: {
+  comp: ComponentConfig;
+  formData: Record<string, string>;
+  setFormData: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }) {
-  const input = (label: string, field: string, value: string, ph: string, span?: string) => (
-    <div className={`space-y-1 ${span || ""}`}>
-      <label className="block text-xs font-medium text-[var(--muted)]">{label}</label>
-      <input type="text" value={value} onChange={(e) => onChange(field, e.target.value)} placeholder={ph}
-        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/10" />
-    </div>
-  );
-  return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-[var(--ink)]">Address</label>
-      {input("Street Address", "street", street, "123 Main St")}
-      <div className="grid grid-cols-3 gap-3">
-        {input("City", "city", city, "New York")}
-        {input("State", "state", state, "NY")}
-        {input("Zip Code", "zip", zip, "10001")}
-      </div>
-    </div>
-  );
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: "1.5px solid var(--border)",
+    background: "var(--surface)",
+    color: "var(--ink)",
+    fontSize: "0.875rem",
+    transition: "all 0.2s ease",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: "var(--ink-soft)",
+    marginBottom: 6,
+  };
+
+  switch (comp.type) {
+    case "about_me":
+      return (
+        <div className="anim-in">
+          <label style={labelStyle}>✍️ {comp.label}</label>
+          <textarea
+            value={formData.aboutMe || ""}
+            onChange={(e) => setFormData((p) => ({ ...p, aboutMe: e.target.value }))}
+            rows={4}
+            placeholder="Tell us about yourself..."
+            style={{ ...inputStyle, resize: "vertical" as const }}
+          />
+        </div>
+      );
+    case "address":
+      return (
+        <div className="space-y-3 anim-in">
+          <label style={labelStyle}>📍 {comp.label}</label>
+          <input
+            value={formData.street || ""}
+            onChange={(e) => setFormData((p) => ({ ...p, street: e.target.value }))}
+            placeholder="Street Address"
+            style={inputStyle}
+          />
+          <div className="grid grid-cols-3 gap-3">
+            <input
+              value={formData.city || ""}
+              onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))}
+              placeholder="City"
+              style={inputStyle}
+            />
+            <input
+              value={formData.state || ""}
+              onChange={(e) => setFormData((p) => ({ ...p, state: e.target.value }))}
+              placeholder="State"
+              style={inputStyle}
+            />
+            <input
+              value={formData.zip || ""}
+              onChange={(e) => setFormData((p) => ({ ...p, zip: e.target.value }))}
+              placeholder="ZIP Code"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+      );
+    case "birthdate":
+      return (
+        <div className="anim-in">
+          <label style={labelStyle}>📅 {comp.label}</label>
+          <input
+            type="date"
+            value={formData.birthdate || ""}
+            onChange={(e) => setFormData((p) => ({ ...p, birthdate: e.target.value }))}
+            style={inputStyle}
+          />
+        </div>
+      );
+    default:
+      return null;
+  }
 }
 
-function BirthdateField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-[var(--ink)]">Date of Birth</label>
-      <input type="date" value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/10" />
-    </div>
-  );
-}
-
+/* ── Main Component ── */
 export default function OnboardingPage() {
-  const [config, setConfig] = useState<PageConfig | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [step, setStep] = useState(1);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [config, setConfig] = useState<PageConfig | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [aboutMe, setAboutMe] = useState("");
-  const [street, setStreet] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [zip, setZip] = useState("");
-  const [birthdate, setBirthdate] = useState("");
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [configLoading, setConfigLoading] = useState(true);
 
-  useEffect(() => { 
+  // Load config on mount
+  useEffect(() => {
     fetch("/api/config")
-      .then(async r => {
-        if (!r.ok) {
-          const err = await r.text();
-          throw new Error(err);
-        }
-        return r.json();
-      })
-      .then(setConfig)
-      .catch(err => {
-        console.error(err);
-        setError("Database connection error. Please ensure Supabase is configured correctly.");
+      .then((r) => r.json())
+      .then((d) => setConfig(d))
+      .catch(() => setError("Failed to load configuration"))
+      .finally(() => setConfigLoading(false));
+  }, []);
+
+  const handleStep1 = async () => {
+    if (!email || !password) {
+      setError("Please enter both email and password.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+
+    try {
+      // Try to create user
+      let res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-  }, []);
 
-  const populateFields = useCallback((u: User) => {
-    if (u.aboutMe) setAboutMe(u.aboutMe);
-    if (u.street) setStreet(u.street);
-    if (u.city) setCity(u.city);
-    if (u.state) setState(u.state);
-    if (u.zip) setZip(u.zip);
-    if (u.birthdate) setBirthdate(u.birthdate);
-  }, []);
-
-  function getComponentsForStep(pageNum: number): ComponentName[] {
-    if (!config) return [];
-    const c: ComponentName[] = [];
-    if (config.aboutMe === pageNum) c.push("aboutMe");
-    if (config.address === pageNum) c.push("address");
-    if (config.birthdate === pageNum) c.push("birthdate");
-    return c;
-  }
-
-  async function handleStep1() {
-    setError(""); setLoading(true);
-    try {
-      let res = await fetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
-      let data = await res.json();
       if (res.status === 409) {
-        res = await fetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, action: "login" }) });
-        data = await res.json();
-        if (!res.ok) { setError("Email already registered with a different password."); setLoading(false); return; }
+        // User exists — try login
+        res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, action: "login" }),
+        });
       }
-      if (!res.ok) { setError(data.error || "Something went wrong"); setLoading(false); return; }
-      setUser(data); populateFields(data); setStep(Math.max(data.step, 2));
-    } catch { setError("Network error. Please try again."); }
-    setLoading(false);
-  }
 
-  async function handleDynamicStep() {
-    if (!user) return;
-    setError(""); setLoading(true);
-    const update: Record<string, unknown> = { step: step + 1 };
-    for (const comp of getComponentsForStep(step)) {
-      if (comp === "aboutMe") update.aboutMe = aboutMe;
-      if (comp === "address") { update.street = street; update.city = city; update.state = state; update.zip = zip; }
-      if (comp === "birthdate") update.birthdate = birthdate;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Something went wrong");
+      }
+
+      const user: UserData = await res.json();
+      setUserId(user.id);
+
+      // Resume: load existing data into form
+      if (user.aboutMe) setFormData((p) => ({ ...p, aboutMe: user.aboutMe! }));
+      if (user.street) setFormData((p) => ({ ...p, street: user.street! }));
+      if (user.city) setFormData((p) => ({ ...p, city: user.city! }));
+      if (user.state) setFormData((p) => ({ ...p, state: user.state! }));
+      if (user.zip) setFormData((p) => ({ ...p, zip: user.zip! }));
+      if (user.birthdate) setFormData((p) => ({ ...p, birthdate: user.birthdate! }));
+
+      // Jump to saved step (minimum step 2)
+      const nextStep = Math.max(2, Math.min(user.step || 2, 4));
+      setStep(nextStep);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create account");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleStepSubmit = async (nextStep: number) => {
+    if (!userId) return;
+    setLoading(true);
+    setError("");
+
     try {
-      const res = await fetch(`/api/users/${user.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(update) });
-      const data = await res.json();
-      setUser(data); setStep(step + 1);
-    } catch { setError("Failed to save."); }
-    setLoading(false);
-  }
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, step: nextStep }),
+      });
 
-  function renderComponent(name: ComponentName) {
-    switch (name) {
-      case "aboutMe": return <AboutMeField key="aboutMe" value={aboutMe} onChange={setAboutMe} />;
-      case "address": return <AddressFields key="address" street={street} city={city} state={state} zip={zip} onChange={(f, v) => { if (f==="street") setStreet(v); if (f==="city") setCity(v); if (f==="state") setState(v); if (f==="zip") setZip(v); }} />;
-      case "birthdate": return <BirthdateField key="birthdate" value={birthdate} onChange={setBirthdate} />;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save");
+      }
+
+      setStep(nextStep);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save progress");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  if (!config) return <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" /></div>;
+  const currentComponents =
+    step === 2 ? config?.page2 : step === 3 ? config?.page3 : [];
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      {/* Hero */}
-      <div className="mb-8 text-center">
-        <h1 className="mb-2 text-2xl font-bold text-[var(--ink)]">
-          Welcome to Support<span className="text-[var(--accent)]">IQ</span>
+    <div className="mx-auto max-w-xl px-6 py-12">
+      {/* Header */}
+      <div className="text-center mb-2 anim-in">
+        <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>
+          Get Started with <span className="gradient-text">SupportIQ</span>
         </h1>
-        <p className="text-sm text-[var(--muted)]">Set up your account to get started with AI-powered customer support.</p>
+        <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
+          Set up your account in a few quick steps
+        </p>
       </div>
 
-      <div className="mx-auto max-w-lg">
-        <StepIndicator current={step} total={4} />
+      {/* Step Indicator */}
+      <StepIndicator current={step} />
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm">
-          <h2 className="mb-1 text-lg font-semibold text-[var(--ink)]">
-            {step === 1 && "Create your account"}
-            {step === 2 && "Tell us more about you"}
-            {step === 3 && "Almost there"}
-            {step === 4 && "You're all set!"}
+      {/* Error */}
+      {error && (
+        <div
+          className="mb-6 rounded-lg px-4 py-3 text-sm font-medium anim-scale"
+          style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error)" }}
+        >
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Step 1: Account */}
+      {step === 1 && (
+        <div className="glass p-8 anim-in">
+          <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--ink)" }}>
+            Create your account
           </h2>
-          <p className="mb-6 text-sm text-[var(--muted)]">
-            {step === 1 && "Enter your credentials to get started. Already have an account? We'll pick up where you left off."}
-            {step === 2 && "Complete your profile with the information below."}
-            {step === 3 && "Just one more step to finish setting up."}
-            {step === 4 && "Your account is ready. Explore your SupportIQ dashboard."}
+          <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
+            Already have an account? We&apos;ll pick up where you left off.
           </p>
 
-          {error && <div className="mb-4 rounded-lg bg-[var(--warning-bg)] px-4 py-3 text-sm text-[var(--warning)]">{error}</div>}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--ink-soft)" }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="w-full rounded-lg px-4 py-2.5 text-sm"
+                style={{
+                  background: "var(--surface)",
+                  border: "1.5px solid var(--border)",
+                  color: "var(--ink)",
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleStep1()}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--ink-soft)" }}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-lg px-4 py-2.5 text-sm"
+                style={{
+                  background: "var(--surface)",
+                  border: "1.5px solid var(--border)",
+                  color: "var(--ink)",
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleStep1()}
+              />
+            </div>
+          </div>
 
-          {step === 1 && (
-            <form onSubmit={e => { e.preventDefault(); handleStep1(); }} className="space-y-4">
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-[var(--muted)]">Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/10" />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-[var(--muted)]">Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={6}
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/10" />
-              </div>
-              <button type="submit" disabled={loading}
-                className="w-full rounded-lg bg-[var(--accent)] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--accent-hover)] disabled:opacity-50">
-                {loading ? "Processing..." : "Get Started →"}
-              </button>
-            </form>
-          )}
+          <button
+            onClick={handleStep1}
+            disabled={loading}
+            className="btn-primary w-full mt-6 flex items-center justify-center gap-2"
+          >
+            {loading ? <Spinner size={18} /> : null}
+            {loading ? "Creating account..." : "Get Started →"}
+          </button>
+        </div>
+      )}
 
-          {(step === 2 || step === 3) && (
-            <form onSubmit={e => { e.preventDefault(); handleDynamicStep(); }} className="space-y-5">
-              {getComponentsForStep(step).map(renderComponent)}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setStep(step - 1 < 2 ? 1 : step - 1)}
-                  className="rounded-lg border border-[var(--border)] px-6 py-2.5 text-sm font-medium text-[var(--muted)] transition hover:bg-[var(--bg)]">
-                  ← Back
-                </button>
-                <button type="submit" disabled={loading}
-                  className="flex-1 rounded-lg bg-[var(--accent)] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--accent-hover)] disabled:opacity-50">
-                  {loading ? "Saving..." : step === 3 ? "Complete Setup ✓" : "Continue →"}
-                </button>
-              </div>
-            </form>
-          )}
+      {/* Step 2 & 3: Dynamic forms */}
+      {(step === 2 || step === 3) && (
+        <div className="glass p-8 anim-in" key={step}>
+          <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--ink)" }}>
+            {step === 2 ? "Tell us about yourself" : "A few more details"}
+          </h2>
+          <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
+            Step {step} of {STEPS.length - 1} — {step === 2 ? "We'd love to know more" : "Almost there!"}
+          </p>
 
-          {step === 4 && (
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-soft)]">
-                <svg className="h-8 w-8 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="mb-4 text-sm text-[var(--muted)]">Your account is fully set up and ready to go.</p>
-              <div className="flex gap-3 justify-center">
-                <a href="/dashboard" className="rounded-lg bg-[var(--accent)] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--accent-hover)]">
-                  Open Dashboard →
-                </a>
-                <a href="/data" className="rounded-lg border border-[var(--border)] px-6 py-2.5 text-sm font-medium text-[var(--muted)] transition hover:bg-[var(--bg)]">
-                  View Data
-                </a>
-              </div>
+          {configLoading ? (
+            <div className="flex justify-center py-12">
+              <Spinner size={28} />
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {currentComponents?.map((comp) => (
+                <DynamicField key={comp.id} comp={comp} formData={formData} setFormData={setFormData} />
+              ))}
+              {(!currentComponents || currentComponents.length === 0) && (
+                <p className="text-center py-8" style={{ color: "var(--muted)" }}>
+                  No fields configured for this step.
+                </p>
+              )}
             </div>
           )}
+
+          <div className="flex gap-3 mt-8">
+            <button onClick={() => setStep(step - 1)} className="btn-secondary flex-1">
+              ← Back
+            </button>
+            <button
+              onClick={() => handleStepSubmit(step + 1)}
+              disabled={loading}
+              className="btn-primary flex-1 flex items-center justify-center gap-2"
+            >
+              {loading ? <Spinner size={18} /> : null}
+              {step === 3 ? "Complete →" : "Continue →"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Step 4: Success */}
+      {step === 4 && (
+        <div className="glass p-10 text-center anim-scale">
+          {/* Animated checkmark */}
+          <div
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full"
+            style={{
+              background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-end))",
+              boxShadow: "0 8px 32px var(--accent-glow)",
+            }}
+          >
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" style={{ strokeDasharray: 24, animation: "checkmark 0.5s ease-out 0.2s both" }} />
+            </svg>
+          </div>
+
+          <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--ink)" }}>
+            You&apos;re all set! 🎉
+          </h2>
+          <p className="text-sm mb-8" style={{ color: "var(--muted)" }}>
+            Your account has been created successfully. Explore what SupportIQ can do.
+          </p>
+
+          <div className="flex gap-3 justify-center">
+            <a href="/dashboard" className="btn-primary inline-flex items-center gap-2">
+              🚀 View Dashboard
+            </a>
+            <a href="/data" className="btn-secondary inline-flex items-center gap-2">
+              📊 View Data
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,51 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUser, getAllUsers, getUserByEmail } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
-// POST /api/users — Register a new user OR resume session
 export async function POST(req: NextRequest) {
   try {
     const { email, password, action } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    // Resume: check if user exists and credentials match
+    // Login flow
     if (action === "login") {
-      const user = await getUserByEmail(email);
-      if (user && user.password === password) {
-        return NextResponse.json(user);
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user || user.password !== password) {
+        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json(user);
     }
 
-    // Register: create new user
+    // Signup flow
     try {
-      const user = await createUser(email, password);
+      const user = await prisma.user.create({
+        data: { email, password, step: 2 },
+      });
       return NextResponse.json(user, { status: 201 });
-    } catch (err: any) {
-      if (err.message === "User already exists" || err.message?.includes("duplicate key")) {
-        // User already exists — treat as login attempt
-        const existing = await getUserByEmail(email);
+    } catch (err: unknown) {
+      // Handle unique constraint violation (email already exists)
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code: string }).code === "P2002"
+      ) {
+        const existing = await prisma.user.findUnique({ where: { email } });
         if (existing && existing.password === password) {
           return NextResponse.json(existing);
         }
-        return NextResponse.json({ error: "Email already registered with a different password" }, { status: 409 });
+        return NextResponse.json({ error: "Email already registered" }, { status: 409 });
       }
-      
-      console.error("Registration error:", err);
-      return NextResponse.json(
-        { error: err.message || "Registration failed" },
-        { status: 500 }
-      );
+      throw err;
     }
-  } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  } catch (error) {
+    console.error("POST /api/users error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// GET /api/users — List all users (for data table)
 export async function GET() {
-  const users = await getAllUsers();
-  return NextResponse.json(users);
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(users);
+  } catch (error) {
+    console.error("GET /api/users error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

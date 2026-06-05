@@ -1,36 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getConfig, updateConfig } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
-// GET /api/config
 export async function GET() {
-  const config = await getConfig();
-  return NextResponse.json(config);
+  try {
+    let config = await prisma.pageConfig.findUnique({ where: { id: "config" } });
+    if (!config) {
+      config = await prisma.pageConfig.create({
+        data: { id: "config", aboutMe: 2, address: 2, birthdate: 3 },
+      });
+    }
+    return NextResponse.json(config);
+  } catch (error) {
+    console.error("GET /api/config error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
-// PUT /api/config — Update which components appear on which page
 export async function PUT(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { aboutMe, address, birthdate } = body;
+    const { aboutMe, address, birthdate } = await req.json();
 
-    // Validate: each must be 2 or 3
-    if (![2, 3].includes(aboutMe) || ![2, 3].includes(address) || ![2, 3].includes(birthdate)) {
-      return NextResponse.json({ error: "Each component must be on page 2 or 3" }, { status: 400 });
+    // Validate each value is 2 or 3
+    for (const [key, val] of Object.entries({ aboutMe, address, birthdate })) {
+      if (val !== 2 && val !== 3) {
+        return NextResponse.json(
+          { error: `${key} must be 2 or 3` },
+          { status: 400 }
+        );
+      }
     }
 
-    // Validate: each page must have at least one component
-    const page2Count = [aboutMe, address, birthdate].filter((p) => p === 2).length;
-    const page3Count = [aboutMe, address, birthdate].filter((p) => p === 3).length;
-    if (page2Count === 0 || page3Count === 0) {
+    // Validate that both page 2 and page 3 have at least 1 component
+    const page2Components = [aboutMe, address, birthdate].filter((v) => v === 2).length;
+    const page3Components = [aboutMe, address, birthdate].filter((v) => v === 3).length;
+
+    if (page2Components === 0) {
       return NextResponse.json(
-        { error: "Each page must have at least one component" },
+        { error: "Page 2 must have at least one component" },
+        { status: 400 }
+      );
+    }
+    if (page3Components === 0) {
+      return NextResponse.json(
+        { error: "Page 3 must have at least one component" },
         { status: 400 }
       );
     }
 
-    const config = await updateConfig({ aboutMe, address, birthdate });
+    const config = await prisma.pageConfig.upsert({
+      where: { id: "config" },
+      update: { aboutMe, address, birthdate },
+      create: { id: "config", aboutMe, address, birthdate },
+    });
+
     return NextResponse.json(config);
-  } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  } catch (error) {
+    console.error("PUT /api/config error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

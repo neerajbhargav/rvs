@@ -1,77 +1,176 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 
-interface User {
-  id: string; email: string; step: number; aboutMe: string | null;
-  street: string | null; city: string | null; state: string | null;
-  zip: string | null; birthdate: string | null; createdAt: string;
+interface UserRecord {
+  id: string;
+  email: string;
+  step: number;
+  aboutMe?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  birthdate?: string;
+  createdAt?: string;
 }
 
 export default function DataPage() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchUsers = useCallback(async () => {
-    try { const res = await fetch("/api/users"); setUsers(await res.json()); } catch {}
-    setLoading(false);
+  const loadUsers = () => {
+    setLoading(true);
+    fetch("/api/users")
+      .then((r) => r.json())
+      .then((d) => setUsers(Array.isArray(d) ? d : []))
+      .catch(() => setUsers([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadUsers();
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
-
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="mx-auto max-w-6xl px-6 py-12">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8 anim-in">
         <div>
-          <div className="mb-1 flex items-center gap-2">
-            <span className="mono rounded bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--accent)]">DATABASE</span>
-            <h1 className="text-xl font-semibold text-[var(--ink)]">User Data</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <span
+              className="text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-md"
+              style={{
+                background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-end))",
+                color: "white",
+              }}
+            >
+              DATABASE
+            </span>
+            <span className="text-xs mono" style={{ color: "var(--subtle)" }}>
+              {users.length} record{users.length !== 1 ? "s" : ""}
+            </span>
           </div>
-          <p className="text-sm text-[var(--muted)]">{users.length} record{users.length !== 1 ? "s" : ""} in database · Refreshes on page load</p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>
+            User Data
+          </h1>
         </div>
-        <button onClick={() => { setLoading(true); fetchUsers(); }}
-          className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
-          ↻ Refresh
+        <button
+          onClick={loadUsers}
+          disabled={loading}
+          className="btn-secondary flex items-center gap-2"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={loading ? "animate-spin" : ""}>
+            <polyline points="23 4 23 10 17 10" />
+            <polyline points="1 20 1 14 7 14" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+          Refresh
         </button>
       </div>
 
+      {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" /></div>
+        <div className="flex items-center justify-center py-24">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="animate-spin">
+            <circle cx="12" cy="12" r="10" stroke="var(--border)" strokeWidth="3" />
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+        </div>
       ) : users.length === 0 ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-12 text-center">
-          <p className="text-sm text-[var(--muted)]">No users yet. Complete the <a href="/" className="text-[var(--accent)] underline">onboarding flow</a> to see data here.</p>
+        <div className="glass p-16 text-center anim-in">
+          <div className="text-4xl mb-4">📭</div>
+          <h3 className="font-semibold text-lg mb-1" style={{ color: "var(--ink)" }}>
+            No users yet
+          </h3>
+          <p className="text-sm" style={{ color: "var(--muted)" }}>
+            Complete the <a href="/" className="underline" style={{ color: "var(--accent)" }}>onboarding flow</a> to see data here.
+          </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--surface)]">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--bg)]">
-                {["Email", "Status", "About Me", "Street", "City", "State", "Zip", "Birthdate", "Created"].map(h => (
-                  <th key={h} className="mono px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id} className="border-b border-[var(--border)] last:border-0 transition hover:bg-[var(--bg)]/50">
-                  <td className="px-4 py-3 font-medium text-[var(--ink)]">{u.email}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium"
-                      style={{ background: u.step >= 4 ? "var(--accent-soft)" : "var(--warning-bg)", color: u.step >= 4 ? "var(--accent)" : "var(--warning)" }}>
-                      {u.step >= 4 ? "Complete" : `Step ${u.step}/3`}
-                    </span>
-                  </td>
-                  <td className="max-w-[160px] truncate px-4 py-3 text-[var(--muted)]">{u.aboutMe || "—"}</td>
-                  <td className="px-4 py-3 text-[var(--muted)]">{u.street || "—"}</td>
-                  <td className="px-4 py-3 text-[var(--muted)]">{u.city || "—"}</td>
-                  <td className="px-4 py-3 text-[var(--muted)]">{u.state || "—"}</td>
-                  <td className="px-4 py-3 text-[var(--muted)]">{u.zip || "—"}</td>
-                  <td className="px-4 py-3 text-[var(--muted)]">{u.birthdate || "—"}</td>
-                  <td className="mono px-4 py-3 text-xs text-[var(--muted)]">{new Date(u.createdAt).toLocaleDateString()}</td>
+        <div className="glass overflow-hidden anim-in">
+          <div className="overflow-x-auto scroll">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  {["Email", "Status", "About Me", "Street", "City", "State", "Zip", "Birthdate", "Created"].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="text-left px-5 py-3 text-xs font-semibold tracking-wide"
+                        style={{ color: "var(--muted)", background: "var(--surface-hover)" }}
+                      >
+                        {h}
+                      </th>
+                    )
+                  )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map((user, i) => {
+                  const isComplete = user.step >= 4;
+                  return (
+                    <tr
+                      key={user.id}
+                      className="transition-colors"
+                      style={{
+                        borderBottom: i < users.length - 1 ? "1px solid var(--border-soft)" : "none",
+                        animationDelay: `${i * 0.03}s`,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "var(--surface-hover)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      <td className="px-5 py-3.5 font-medium" style={{ color: "var(--ink)" }}>
+                        {user.email}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span
+                          className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                          style={{
+                            background: isComplete ? "var(--accent-soft)" : "var(--warning-bg)",
+                            color: isComplete ? "var(--accent)" : "var(--warning)",
+                          }}
+                        >
+                          {isComplete ? "✓ Complete" : `Step ${user.step}/3`}
+                        </span>
+                      </td>
+                      <td
+                        className="px-5 py-3.5 truncate"
+                        style={{ maxWidth: 160, color: "var(--ink-soft)" }}
+                        title={user.aboutMe || "—"}
+                      >
+                        {user.aboutMe || "—"}
+                      </td>
+                      <td className="px-5 py-3.5" style={{ color: "var(--ink-soft)" }}>
+                        {user.street || "—"}
+                      </td>
+                      <td className="px-5 py-3.5" style={{ color: "var(--ink-soft)" }}>
+                        {user.city || "—"}
+                      </td>
+                      <td className="px-5 py-3.5" style={{ color: "var(--ink-soft)" }}>
+                        {user.state || "—"}
+                      </td>
+                      <td className="px-5 py-3.5 mono text-xs" style={{ color: "var(--ink-soft)" }}>
+                        {user.zip || "—"}
+                      </td>
+                      <td className="px-5 py-3.5 mono text-xs" style={{ color: "var(--ink-soft)" }}>
+                        {user.birthdate || "—"}
+                      </td>
+                      <td className="px-5 py-3.5 mono text-xs" style={{ color: "var(--subtle)" }}>
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString()
+                          : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
