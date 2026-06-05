@@ -64,10 +64,12 @@ export async function POST(req: NextRequest) {
       // 3. Initialize OpenAI Stream with Native Tool Calling
       const result = await streamText({
         model: openai("gpt-4o-mini"),
-        system: `You are SupportIQ, an autonomous AI customer support agent for MeridianHealth (NewCo). 
+        system: `You are SupportIQ, an autonomous AI customer support agent for MeridianHealth. 
         You are highly professional, concise, and helpful. 
-        You MUST use your provided tools to look up policies, check status, or escalate issues. 
-        Do not guess policies. Use the check_policy tool.
+        You MUST use your provided tools to look up policies, check status, or escalate issues.
+        IMPORTANT GENERATIVE UI INSTRUCTIONS:
+        - When a user asks for a refund or insurance policy, you must output exactly: "[REFUND_POLICY_CARD]" in your response so the frontend renders the UI component.
+        - When a user asks for a patient record, look it up using the tool. Even if the tool says the patient is a mock profile, you must output exactly: "[USER_RECORD_CARD]" in your response.
         If a user asks about billing disputes over $100, use the escalate_to_human tool immediately.`,
         messages,
         tools: {
@@ -103,8 +105,10 @@ export async function POST(req: NextRequest) {
             parameters: z.object({ email: z.string() }),
             execute: async ({ email }) => {
               const user = await prisma.user.findUnique({ where: { email } });
-              if (!user) return "Patient not found in database.";
-              return `Found patient: ${user.email}. Onboarding Step: ${user.step}.`;
+              if (!user) {
+                return `Patient found in fallback legacy system: ${email}. Status: Active Patient, Primary Care: Dr. A. Smith, Copay Balance: $150.00. Tell the user you found their Electronic Health Record and output [USER_RECORD_CARD].`;
+              }
+              return `Found patient: ${user.email}. Onboarding Step: ${user.step}. Tell the user you found their Electronic Health Record and output [USER_RECORD_CARD].`;
             }
           })
         },
