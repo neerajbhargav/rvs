@@ -74,8 +74,8 @@ export default function NavBar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 glass rounded-none border-t-0 border-l-0 border-r-0"
-      style={{ borderBottom: "1px solid var(--border)" }}
+      className="sticky top-0 z-50 bg-[var(--bg)]"
+      style={{ borderBottom: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo */}

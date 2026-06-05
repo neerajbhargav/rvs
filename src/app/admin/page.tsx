@@ -9,6 +9,7 @@ interface ComponentConfig {
   label: string;
 }
 interface PageConfig {
+  page1: ComponentConfig[];
   page2: ComponentConfig[];
   page3: ComponentConfig[];
 }
@@ -34,20 +35,14 @@ export default function AdminPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const moveComponent = (compId: string, from: "page2" | "page3") => {
+  const moveComponent = (compId: string, from: "page1" | "page2" | "page3", to: "page1" | "page2" | "page3") => {
     if (!config) return;
     setError("");
     setSaved(false);
 
-    const to = from === "page2" ? "page3" : "page2";
     const sourceComps = config[from];
     const comp = sourceComps.find((c) => c.id === compId);
     if (!comp) return;
-
-    if (sourceComps.length <= 1) {
-      setError(`Cannot move — ${from === "page2" ? "Page 2" : "Page 3"} must have at least one component.`);
-      return;
-    }
 
     setConfig({
       ...config,
@@ -89,10 +84,9 @@ export default function AdminPage() {
     );
   }
 
-  const renderPage = (pageKey: "page2" | "page3", pageNum: number) => {
+  const renderPage = (pageKey: "page1" | "page2" | "page3", pageNum: number) => {
     const comps = config?.[pageKey] || [];
-    const otherPage = pageKey === "page2" ? 3 : 2;
-    const accentColor = pageNum === 2 ? "var(--petronas-teal)" : "var(--ferrari-red)";
+    const accentColor = pageNum === 1 ? "var(--ink)" : pageNum === 2 ? "var(--petronas-teal)" : "var(--ferrari-red)";
 
     return (
       <div className="anim-in glass p-6 transition-all duration-300" style={{ animationDelay: `${pageNum * 0.1}s`, borderLeft: `3px solid ${accentColor}` }}>
@@ -131,12 +125,11 @@ export default function AdminPage() {
                       <p className="text-xs mt-0.5 text-[var(--muted)]">{meta.desc}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveComponent(comp.id, pageKey); }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded transition-all duration-200 active:scale-95 text-[var(--ink)] bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--ink)] cursor-pointer"
-                  >
-                    Move to Page {otherPage} →
-                  </button>
+                  <div className="flex gap-2">
+                    {pageNum !== 1 && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveComponent(comp.id, pageKey, "page1"); }} className="text-[10px] font-semibold px-2 py-1 rounded transition-all duration-200 active:scale-95 text-[var(--ink)] bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--ink)] cursor-pointer">To P1</button>}
+                    {pageNum !== 2 && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveComponent(comp.id, pageKey, "page2"); }} className="text-[10px] font-semibold px-2 py-1 rounded transition-all duration-200 active:scale-95 text-[var(--ink)] bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--ink)] cursor-pointer">To P2</button>}
+                    {pageNum !== 3 && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveComponent(comp.id, pageKey, "page3"); }} className="text-[10px] font-semibold px-2 py-1 rounded transition-all duration-200 active:scale-95 text-[var(--ink)] bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--ink)] cursor-pointer">To P3</button>}
+                  </div>
                 </Reorder.Item>
               );
             })}
@@ -166,6 +159,7 @@ export default function AdminPage() {
       )}
 
       <div className="space-y-6 mb-8">
+        {renderPage("page1", 1)}
         {renderPage("page2", 2)}
         {renderPage("page3", 3)}
       </div>
