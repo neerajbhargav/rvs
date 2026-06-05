@@ -32,6 +32,19 @@ export default function DashboardPage() {
     .filter((m) => m.toolInvocations && m.toolInvocations.length > 0)
     .flatMap((m) => m.toolInvocations!);
 
+  const handleExport = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Time,Sessions Deflected,Baseline Expected\n"
+      + CHART_DATA.map(e => `${e.time},${e.saved},${e.baseline}`).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "supportiq_live_analytics.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="mx-auto max-w-[1400px] px-8 py-10 space-y-8 min-h-screen">
       
@@ -42,7 +55,10 @@ export default function DashboardPage() {
           <p className="text-[var(--muted)] font-medium mt-1">Real-time autonomous AI support operations.</p>
         </div>
         <div className="flex gap-4">
-          <button className="btn-secondary text-xs">Export Report</button>
+          <button onClick={handleExport} className="btn-secondary text-xs flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Report
+          </button>
           <button className="btn-primary text-xs flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             System Live

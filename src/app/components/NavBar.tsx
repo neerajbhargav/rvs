@@ -92,7 +92,7 @@ export default function NavBar() {
 
         {/* Links + Toggle */}
         <div className="flex items-center gap-2">
-          {navItems.map((item) => {
+          {pathname !== "/" && navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
