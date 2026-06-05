@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Confetti from "react-confetti";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 
 interface ComponentConfig {
   id: string;
@@ -92,7 +93,7 @@ function DynamicField({ comp, formData, setFormData }: { comp: ComponentConfig; 
     case "about_me":
       return (
         <div className="anim-in">
-          <label className={labelClass}>{comp.label} <span className="text-gray-400 font-normal normal-case tracking-normal">(Optional)</span></label>
+          <label className={labelClass}>Bio / Say Something About Yourself <span className="text-gray-400 font-normal normal-case tracking-normal">(Optional)</span></label>
           <textarea
             value={formData.aboutMe || ""}
             onChange={(e) => setFormData((p) => ({ ...p, aboutMe: e.target.value }))}
@@ -213,7 +214,9 @@ function DynamicField({ comp, formData, setFormData }: { comp: ComponentConfig; 
   }
 }
 
-export default function OnboardingPage() {
+function OnboardingForm() {
+  const searchParams = useSearchParams();
+  const editMode = searchParams.get("edit") === "true";
   const [step, setStep] = useState(1);
   const [config, setConfig] = useState<PageConfig | null>(null);
   const [email, setEmail] = useState("");
@@ -228,6 +231,12 @@ export default function OnboardingPage() {
 
   // Track the previous step to determine sliding direction
   const [prevStep, setPrevStep] = useState(1);
+
+  useEffect(() => {
+    if (editMode && userId && step > 3) {
+      handleSetStep(2);
+    }
+  }, [editMode, userId, step]);
 
   useEffect(() => {
     // Load config
@@ -254,8 +263,7 @@ export default function OnboardingPage() {
         if (user.zip) setFormData((p) => ({ ...p, zip: user.zip! }));
         if (user.birthdate) setFormData((p) => ({ ...p, birthdate: user.birthdate! }));
         
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("edit") === "true") {
+        if (editMode) {
           handleSetStep(2);
         } else {
           handleSetStep(Math.max(2, Math.min(user.step || 2, 4)));
@@ -526,5 +534,13 @@ export default function OnboardingPage() {
       </motion.div>
       
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[var(--muted)] display-font font-bold">Loading...</div>}>
+      <OnboardingForm />
+    </Suspense>
   );
 }
