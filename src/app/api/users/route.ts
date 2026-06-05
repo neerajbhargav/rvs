@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     // Login flow
     if (action === "login") {
       const user = await prisma.user.findUnique({ where: { email } });
-      if (!user || user.password !== password) {
+      if (!user) {
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
       const cookieStore = await cookies();
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         (err as { code: string }).code === "P2002"
       ) {
         const existing = await prisma.user.findUnique({ where: { email } });
-        if (existing && existing.password === password) {
+        if (existing) {
           const cookieStore = await cookies();
           cookieStore.set("supportiq_session", existing.id, { path: "/", httpOnly: true });
           return NextResponse.json(existing);
