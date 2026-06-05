@@ -126,7 +126,18 @@ export default function NavBar() {
               </Link>
             );
           })}
-          <div className="ml-2 pl-4" style={{ borderLeft: "1px solid var(--border)" }}>
+          <div className="ml-2 pl-4 flex items-center gap-3" style={{ borderLeft: "1px solid var(--border)" }}>
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+              className="flex items-center gap-2 px-3 h-9 rounded-md text-xs font-medium transition-all duration-200 hover:bg-[var(--surface-hover)]"
+              style={{ border: "1px solid var(--border)", color: "var(--muted)" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <span>Search</span>
+              <kbd className="hidden sm:flex items-center gap-1 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--surface)] text-[var(--ink-soft)] border border-[var(--border-soft)]">
+                <span className="text-xs leading-none">⌘</span>K
+              </kbd>
+            </button>
             <ThemeToggle />
           </div>
         </div>
