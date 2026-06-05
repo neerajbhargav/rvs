@@ -79,7 +79,7 @@ export default function NavBar() {
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 group">
+        <button onClick={() => window.location.href = '/'} className="flex items-center gap-2 group cursor-pointer outline-none">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--ink)]">
               <span className="text-[var(--bg)] font-bold text-lg display-font leading-none" style={{ marginLeft: 2, marginTop: -2 }}>IQ*</span>
@@ -88,23 +88,23 @@ export default function NavBar() {
               NewCo
             </span>
           </div>
-        </a>
+        </button>
 
         {/* Links + Toggle */}
         <div className="flex items-center gap-2">
           {pathname !== "/" && navItems.map((item) => {
             const isActive = pathname === item.href;
             return item.href === "/" ? (
-              <a
+              <button
                 key={item.href}
-                href={item.href}
-                className="relative rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200"
+                onClick={() => window.location.href = '/'}
+                className="relative rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 outline-none"
                 style={{ color: "var(--muted)", background: "transparent" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = "var(--muted)"; }}
               >
                 {item.label}
-              </a>
+              </button>
             ) : (
               <Link
                 key={item.href}

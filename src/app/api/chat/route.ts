@@ -6,15 +6,24 @@ import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
-function getMockFallbackResponse() {
+function getMockFallbackResponse(messages: any[]) {
   const encoder = new TextEncoder();
+  const lastMsg = messages[messages.length - 1]?.content?.toLowerCase() || "";
+  
+  let msgs = [
+    "This is a simulated response indicating that your system is functioning, but no OpenAI API Key was provided."
+  ];
+
+  if (lastMsg.includes("policy") || lastMsg.includes("refund")) {
+    msgs = ["I have found the insurance policy you requested. Here is the coverage card:\n\n[REFUND_POLICY_CARD]"];
+  } else if (lastMsg.includes("record") || lastMsg.includes("test@newco")) {
+    msgs = ["I located your Electronic Health Record (EHR). Here is your patient profile:\n\n[USER_RECORD_CARD]"];
+  } else if (lastMsg.includes("dispute") || lastMsg.includes("charge")) {
+    msgs = ["I see there is a billing dispute regarding your recent $150 MRI copay. I have flagged this transaction and escalated the ticket to human billing specialists."];
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
-      const msgs = [
-        "It looks like the live OpenAI API key was not configured in this environment.",
-        "\n\nHowever, the autonomous tool routing mechanism is still online.",
-        "\n\n[MOCK] System is able to assist you with policies, billing, and scheduling based on our fallback architecture."
-      ];
       for (const msg of msgs) {
         controller.enqueue(encoder.encode(`0:${JSON.stringify(msg)}\n`));
         await new Promise(r => setTimeout(r, 600));
@@ -119,7 +128,7 @@ export async function POST(req: NextRequest) {
       return result.toDataStreamResponse();
     } catch (llmError) {
       console.warn("LLM API failed. Falling back to mock stream:", llmError);
-      return getMockFallbackResponse();
+      return getMockFallbackResponse(messages);
     }
   } catch (error) {
     console.error("Chat API Error:", error);

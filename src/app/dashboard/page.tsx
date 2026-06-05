@@ -69,11 +69,11 @@ export default function DashboardPage() {
             <div className="w-6 h-6 rounded bg-[var(--petronas-teal)] text-white flex items-center justify-center">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h4 className="font-bold display-font text-sm">Standard Refund Policy</h4>
+            <h4 className="font-bold display-font text-sm">MeridianHealth Copay & Refund Policy</h4>
           </div>
-          <p className="text-xs text-[var(--muted)] mb-3">Customers are eligible for a full refund within 30 days of purchase, provided the service was not fully utilized.</p>
+          <p className="text-xs text-[var(--muted)] mb-3">Patients are eligible for a full refund of copays or out-of-pocket costs within 30 days if a scheduled appointment was canceled by the provider.</p>
           <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-[var(--muted)] border-t border-[var(--border)] pt-2">
-            <span>Policy ID: RF-2026</span>
+            <span>Policy ID: MH-2026</span>
             <span className="text-[var(--petronas-teal)]">Active</span>
           </div>
         </motion.div>
@@ -85,14 +85,14 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 mb-3 border-b border-[var(--border)] pb-3">
             <div className="w-10 h-10 rounded-full bg-[var(--ink)] text-[var(--bg)] flex items-center justify-center font-bold text-sm">T</div>
             <div>
-              <h4 className="font-bold display-font text-sm">test@newco.com</h4>
-              <p className="text-xs text-[var(--muted)]">Status: Premium Subscriber</p>
+              <h4 className="font-bold display-font text-sm">test@meridianhealth.com</h4>
+              <p className="text-xs text-[var(--muted)]">Status: Active Patient (Plan: Aetna Gold)</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">LTV</span><span className="font-bold">$1,250.00</span></div>
-            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">Last Login</span><span className="font-bold">Today, 08:30 AM</span></div>
-            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">Risk Level</span><span className="font-bold text-[var(--petronas-teal)]">Low</span></div>
+            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">Primary Care</span><span className="font-bold">Dr. A. Smith</span></div>
+            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">Last Visit</span><span className="font-bold">Today, 08:30 AM (MRI)</span></div>
+            <div><span className="text-[var(--muted)] block text-[10px] uppercase tracking-wider mb-0.5">Copay Balance</span><span className="font-bold text-[var(--warning)]">$150.00</span></div>
           </div>
         </motion.div>
       );
