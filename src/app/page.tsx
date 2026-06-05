@@ -201,11 +201,35 @@ export default function OnboardingPage() {
   const [prevStep, setPrevStep] = useState(1);
 
   useEffect(() => {
+    // Load config
     fetch("/api/config")
       .then((r) => r.json())
       .then((d) => setConfig(d))
       .catch(() => setError("Failed to load configuration"))
       .finally(() => setConfigLoading(false));
+
+    // Auto-resume session if exists
+    fetch("/api/users/me")
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error("No session");
+      })
+      .then((user: UserData) => {
+        setUserId(user.id);
+        setEmail(user.email);
+        setPassword("********"); // dummy mask since they are logged in
+        if (user.aboutMe) setFormData((p) => ({ ...p, aboutMe: user.aboutMe! }));
+        if (user.street) setFormData((p) => ({ ...p, street: user.street! }));
+        if (user.city) setFormData((p) => ({ ...p, city: user.city! }));
+        if (user.state) setFormData((p) => ({ ...p, state: user.state! }));
+        if (user.zip) setFormData((p) => ({ ...p, zip: user.zip! }));
+        if (user.birthdate) setFormData((p) => ({ ...p, birthdate: user.birthdate! }));
+        
+        handleSetStep(Math.max(2, Math.min(user.step || 2, 4)));
+      })
+      .catch(() => {
+        // Normal behavior, user not logged in
+      });
   }, []);
 
   const handleSetStep = (newStep: number) => {
