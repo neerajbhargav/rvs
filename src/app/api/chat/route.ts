@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Initialize OpenAI Stream with Native Tool Calling
-    const result = streamText({
+    const result = await streamText({
       model: openai("gpt-4o-mini"),
       system: `You are SupportIQ, an autonomous AI customer support agent for MeridianHealth (NewCo). 
       You are highly professional, concise, and helpful. 
