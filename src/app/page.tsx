@@ -27,6 +27,66 @@ interface UserData {
 
 const STEPS = ["Account", "Profile", "Details", "Complete"];
 
+function CoffeeBrewing() {
+  return (
+    <div className="absolute -top-10 -right-4 opacity-50">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+        <motion.line x1="6" y1="1" x2="6" y2="4" animate={{ y: [0, -3, 0], opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 2 }} />
+        <motion.line x1="10" y1="1" x2="10" y2="4" animate={{ y: [0, -4, 0], opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 2.2, delay: 0.2 }} />
+        <motion.line x1="14" y1="1" x2="14" y2="4" animate={{ y: [0, -3, 0], opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1.8, delay: 0.4 }} />
+      </svg>
+    </div>
+  );
+}
+
+function CameraClicking() {
+  return (
+    <div className="absolute -top-10 -right-4 opacity-50">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+        <circle cx="12" cy="13" r="4" />
+        <motion.circle cx="19" cy="10" r="1" animate={{ fill: ["var(--bg)", "var(--ink)", "var(--bg)"], r: [1, 3, 1], opacity: [1, 1, 0.5] }} transition={{ repeat: Infinity, duration: 3, repeatDelay: 1 }} />
+      </svg>
+    </div>
+  );
+}
+
+function FlowersBlooming() {
+  return (
+    <div className="absolute -top-10 -right-4 opacity-50">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22v-8" />
+        <motion.path d="M12 18c-2-2-4-2-4 0s2 2 4 0z" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }} style={{ transformOrigin: "12px 18px" }} />
+        <motion.path d="M12 16c2-2 4-2 4 0s-2 2-4 0z" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.4 }} style={{ transformOrigin: "12px 16px" }} />
+        <motion.path d="M12 14c-1-2-3-2-3 0s2 2 3 0z" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.6 }} style={{ transformOrigin: "12px 14px" }} />
+        <motion.path d="M12 14c1-2 3-2 3 0s-2 2-3 0z" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.8 }} style={{ transformOrigin: "12px 14px" }} />
+        <motion.circle cx="12" cy="12" r="2" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1 }} style={{ transformOrigin: "12px 12px" }} />
+      </svg>
+    </div>
+  );
+}
+
+function CarProgress({ step }: { step: number }) {
+  const progress = (step - 1) * 33.33;
+  return (
+    <div className="w-full h-8 relative mt-4 mb-8 border-b-2 border-dashed border-[var(--border-soft)]">
+      <motion.div
+        animate={{ left: `${progress}%` }}
+        transition={{ type: "spring", stiffness: 60, damping: 15 }}
+        className="absolute bottom-0 -ml-4"
+      >
+        <svg width="32" height="16" viewBox="0 0 32 16" fill="var(--ink)">
+          <path d="M4 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm18 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM27.5 5H22V3c0-1.1-.9-2-2-2H10C8.9 1 8 1.9 8 3v2H4.5C3.1 5 2 6.1 2 7.5V10h1.1A3.99 3.99 0 0 1 11 10h8.1A3.99 3.99 0 0 1 27 10h3V7.5c0-1.4-1.1-2.5-2.5-2.5z" />
+          <motion.path d="M1 9h2" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" animate={{ x: [-5, 0], opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 0.5 }} />
+          <motion.path d="M1 7h3" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" animate={{ x: [-8, 0], opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} />
+        </svg>
+      </motion.div>
+    </div>
+  );
+}
+
 function StepIndicator({ current, setStep }: { current: number, setStep: (s: number) => void }) {
   return (
     <div className="flex items-center justify-between mb-12">
@@ -247,8 +307,22 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-6 py-16 flex flex-col min-h-screen justify-center overflow-x-hidden">
+    <div className="mx-auto max-w-lg px-6 py-16 flex flex-col min-h-screen justify-center overflow-x-hidden relative">
       {step === 4 && <Confetti width={typeof window !== 'undefined' ? window.innerWidth : 1000} height={typeof window !== 'undefined' ? window.innerHeight : 1000} recycle={false} numberOfPieces={600} colors={['#00A19B', '#FF8000', '#EF1A2D', '#001A30']} gravity={0.15} />}
+      
+      {/* Checkered Flag Sweeping Animation */}
+      <AnimatePresence>
+        {step === 4 && (
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: "200%" }}
+            transition={{ duration: 2.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[100] pointer-events-none flex opacity-30"
+          >
+            <div className="w-[100vw] h-[100vh]" style={{ backgroundImage: "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik00MCA0MGg0MHY0MEg0MHoiIGZpbGw9IiMwMDAiLz48L3N2Zz4=')", backgroundSize: "80px 80px", transform: "skewX(-15deg)" }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       <div className="mb-12 text-center anim-in">
         <h1 className="text-3xl font-bold display-font mb-2 text-[var(--ink)] tracking-tight">SupportIQ</h1>
@@ -256,6 +330,7 @@ export default function OnboardingPage() {
       </div>
 
       <StepIndicator current={step} setStep={handleSetStep} />
+      <CarProgress step={step} />
 
       {error && (
         <div className="mb-6 rounded-xl px-4 py-3 text-sm font-medium anim-fade border border-[var(--error)] bg-[var(--error-bg)] text-[var(--error)] shadow-sm">
@@ -278,6 +353,7 @@ export default function OnboardingPage() {
             animate="visible"
             exit="exit"
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="relative"
           >
             {configLoading && step < 4 ? (
                <div className="flex justify-center py-12">
@@ -288,6 +364,7 @@ export default function OnboardingPage() {
                 {/* STEP 1: Email/Password Baseline */}
                 {step === 1 && (
                   <div className="space-y-6">
+                    <CoffeeBrewing />
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 text-[var(--ink-soft)] display-font">Email</label>
                       <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="w-full rounded-xl px-4 py-3.5 text-sm bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--ink)] focus:bg-[var(--surface)] outline-none shadow-sm transition-colors duration-200" onKeyDown={(e) => e.key === "Enter" && handleStep1()} disabled={loading} />
@@ -306,6 +383,8 @@ export default function OnboardingPage() {
                 {/* STEP 2 & 3: Dynamic Fields */}
                 {(step === 2 || step === 3) && (
                   <div className="space-y-6">
+                    {step === 2 && <CameraClicking />}
+                    {step === 3 && <FlowersBlooming />}
                     {currentComponents?.map((comp) => <DynamicField key={comp.id} comp={comp} formData={formData} setFormData={setFormData} />)}
                     {(!currentComponents || currentComponents.length === 0) && <p className="text-center py-8 text-[var(--muted)] text-sm font-medium">No fields configured for this step.</p>}
                     
