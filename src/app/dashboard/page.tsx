@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 
-/* ── Types ── */
 interface ToolCall {
   name: string;
   input: string;
@@ -18,7 +17,6 @@ interface ChatMsg {
   reasoning?: string;
 }
 
-/* ── Constants ── */
 const SCENARIOS = [
   { label: "Insurance Question", emoji: "🏥", msg: "What does my health insurance cover for mental health visits?" },
   { label: "Prescription Refill", emoji: "💊", msg: "I need to refill my Lexapro prescription but my provider left the practice" },
@@ -33,24 +31,23 @@ const STATS_INITIAL = [
   { label: "Cost Saved", value: "$41.2K", sub: "$4.20/ticket saved", icon: "💰" },
 ];
 
-/* ── Typing Indicator ── */
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-3 px-5 py-4">
+    <div className="flex items-center gap-3 px-5 py-4 anim-fade">
       <div
-        className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold"
-        style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+        className="h-8 w-8 rounded flex items-center justify-center text-[10px] font-bold display-font"
+        style={{ background: "var(--petronas-teal)", color: "white" }}
       >
         AI
       </div>
-      <div className="flex gap-1">
+      <div className="flex gap-1.5">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="h-2 w-2 rounded-full"
+            className="h-1.5 w-1.5 rounded-full"
             style={{
-              background: "var(--accent)",
-              animation: `typing-bounce 1.2s ease-in-out ${i * 0.15}s infinite`,
+              background: "var(--subtle)",
+              animation: `slideUpFade 1s ease-in-out ${i * 0.2}s infinite alternate`,
             }}
           />
         ))}
@@ -59,25 +56,20 @@ function TypingIndicator() {
   );
 }
 
-/* ── Stat Card ── */
 function StatCard({ stat, i }: { stat: (typeof STATS_INITIAL)[0]; i: number }) {
   return (
-    <div
-      className="glass glass-hover p-5 anim-in"
-      style={{ animationDelay: `${i * 0.1}s` }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-lg">{stat.icon}</span>
-        <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>LIVE</span>
+    <div className="glass p-6 anim-in" style={{ animationDelay: `${i * 0.05}s` }}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xl">{stat.icon}</span>
+        <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded display-font" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>LIVE</span>
       </div>
-      <div className="text-2xl font-bold" style={{ color: "var(--ink)" }}>{stat.value}</div>
-      <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{stat.sub}</div>
-      <div className="text-xs font-medium mt-1" style={{ color: "var(--subtle)" }}>{stat.label}</div>
+      <div className="text-3xl font-bold display-font" style={{ color: "var(--ink)" }}>{stat.value}</div>
+      <div className="text-xs font-semibold mt-1" style={{ color: "var(--ink-soft)" }}>{stat.label}</div>
+      <div className="text-[10px] uppercase tracking-wider mt-2" style={{ color: "var(--subtle)", fontFamily: "var(--font-mono)" }}>{stat.sub}</div>
     </div>
   );
 }
 
-/* ── Main Dashboard ── */
 export default function DashboardPage() {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
@@ -110,7 +102,7 @@ export default function DashboardPage() {
       const agentMsg: ChatMsg = {
         role: "agent",
         text: data.response || "I apologize, I'm having trouble processing that request.",
-        time: data.time || Math.floor(Math.random() * 3 + 1),
+        time: data.time || 2, // Fixed Math.random() linter issue
         confidence: data.confidence ?? 0.94,
         tools: data.tools || [],
         escalate: data.escalate || false,
@@ -120,94 +112,67 @@ export default function DashboardPage() {
       setMessages((p) => [...p, agentMsg]);
       setActiveReasoning(agentMsg);
     } catch {
-      setMessages((p) => [
-        ...p,
-        {
-          role: "agent",
-          text: "Sorry, I encountered an error. Please try again.",
-          confidence: 0,
-          tools: [],
-        },
-      ]);
+      setMessages((p) => [...p, { role: "agent", text: "Error connecting to AI backend.", confidence: 0, tools: [] }]);
     } finally {
       setIsTyping(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
+    <div className="mx-auto max-w-7xl px-6 py-12">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 anim-in">
+      <div className="flex items-center justify-between mb-10 anim-in">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>
-            <span className="gradient-text">SupportIQ</span> Dashboard
+          <h1 className="text-3xl font-bold display-font mb-1" style={{ color: "var(--ink)" }}>
+            SupportIQ
           </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-            Live AI customer support agent · <span className="font-medium" style={{ color: "var(--ink-soft)" }}>MeridianHealth</span>
+          <p className="text-sm font-medium" style={{ color: "var(--muted)" }}>
+            Autonomous AI Support Agent <span className="mx-2">·</span> MeridianHealth
           </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent)" }}>
-          <div className="h-2.5 w-2.5 rounded-full pulse-dot" style={{ background: "var(--accent)" }} />
-          <span className="text-xs font-bold tracking-wider" style={{ color: "var(--accent)" }}>AGENT ONLINE</span>
+        <div className="flex items-center gap-2.5 px-4 py-2 rounded-md" style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+          <div className="h-2 w-2 rounded-full" style={{ background: "var(--petronas-teal)" }} />
+          <span className="text-[10px] font-bold tracking-widest display-font" style={{ color: "var(--ink)" }}>SYSTEM ONLINE</span>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        {STATS_INITIAL.map((stat, i) => (
-          <StatCard key={stat.label} stat={stat} i={i} />
-        ))}
+      <div className="grid grid-cols-4 gap-5 mb-8">
+        {STATS_INITIAL.map((stat, i) => <StatCard key={stat.label} stat={stat} i={i} />)}
       </div>
 
       {/* Main two-column */}
-      <div className="grid gap-6" style={{ gridTemplateColumns: "3fr 2fr" }}>
+      <div className="grid gap-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
+        
         {/* Chat Panel */}
-        <div className="glass flex flex-col" style={{ height: 520 }}>
-          {/* Chat Header */}
-          <div
-            className="flex items-center justify-between px-5 py-3.5"
-            style={{ borderBottom: "1px solid var(--border)" }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm" style={{ color: "var(--ink)" }}>Customer Conversation</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full" style={{ background: "#10b981" }} />
-              <span className="text-[10px] font-bold tracking-wider" style={{ color: "var(--accent)" }}>LIVE</span>
-            </div>
+        <div className="glass flex flex-col" style={{ height: 560 }}>
+          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-hover)" }}>
+            <span className="font-bold text-xs uppercase tracking-wider display-font" style={{ color: "var(--ink)" }}>Customer Chat</span>
+            <span className="text-[10px] font-bold tracking-wider display-font px-2 py-0.5 rounded" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>LIVE SIMULATION</span>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto scroll px-5 py-4 space-y-4">
+          <div className="flex-1 overflow-y-auto scroll px-6 py-6 space-y-6">
             {messages.length === 0 && !isTyping && (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className="text-4xl mb-4">💬</div>
-                <h3 className="font-semibold mb-1" style={{ color: "var(--ink)" }}>Try a customer scenario</h3>
-                <p className="text-xs mb-6" style={{ color: "var(--muted)", maxWidth: 300 }}>
-                  Click a scenario below to see the AI agent in action with real reasoning and tool calls.
+                <div className="h-12 w-12 rounded-full mb-4 flex items-center justify-center" style={{ background: "var(--surface-hover)", border: "1px solid var(--border)" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h3 className="font-bold text-lg display-font mb-2" style={{ color: "var(--ink)" }}>Select a scenario</h3>
+                <p className="text-sm mb-8" style={{ color: "var(--muted)", maxWidth: 300 }}>
+                  Test the agent&apos;s autonomous resolution capabilities.
                 </p>
-                <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+                <div className="grid grid-cols-1 gap-3 w-full max-w-sm">
                   {SCENARIOS.map((s) => (
                     <button
                       key={s.label}
                       onClick={() => sendMessage(s.msg)}
-                      className="text-left rounded-lg p-3 text-xs transition-all duration-200"
-                      style={{
-                        background: "var(--surface-hover)",
-                        border: "1px solid var(--border)",
-                        color: "var(--ink-soft)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "var(--accent)";
-                        e.currentTarget.style.background = "var(--accent-soft)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "var(--border)";
-                        e.currentTarget.style.background = "var(--surface-hover)";
-                      }}
+                      className="text-left rounded-md p-4 text-sm transition-colors duration-200"
+                      style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--ink)" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--ink)"; e.currentTarget.style.background = "var(--surface-hover)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--bg)"; }}
                     >
-                      <span className="text-lg block mb-1">{s.emoji}</span>
-                      <span className="font-medium">{s.label}</span>
+                      <span className="font-semibold display-font">{s.label}</span>
+                      <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>&quot;{s.msg}&quot;</p>
                     </button>
                   ))}
                 </div>
@@ -217,201 +182,113 @@ export default function DashboardPage() {
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} anim-in`}>
                 {msg.role === "agent" && (
-                  <div
-                    className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold mr-2 mt-1 shrink-0"
-                    style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-                  >
+                  <div className="h-8 w-8 rounded flex items-center justify-center text-[10px] font-bold mr-3 mt-1 shrink-0 display-font" style={{ background: "var(--petronas-teal)", color: "white" }}>
                     AI
                   </div>
                 )}
                 <div
-                  className="max-w-[80%] rounded-2xl px-4 py-3 text-sm"
+                  className="max-w-[85%] rounded-md px-5 py-4 text-sm"
                   style={
                     msg.role === "user"
-                      ? {
-                          background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-end))",
-                          color: "white",
-                          borderBottomRightRadius: 4,
-                        }
-                      : {
-                          background: msg.escalate ? "var(--warning-bg)" : "var(--surface-hover)",
-                          color: "var(--ink)",
-                          border: `1px solid ${msg.escalate ? "var(--warning)" : "var(--border)"}`,
-                          borderBottomLeftRadius: 4,
-                        }
+                      ? { background: "var(--ink)", color: "var(--bg)", borderBottomRightRadius: 2 }
+                      : { background: msg.escalate ? "var(--warning-bg)" : "var(--bg)", color: "var(--ink)", border: `1px solid ${msg.escalate ? "var(--warning)" : "var(--border)"}`, borderBottomLeftRadius: 2 }
                   }
                 >
                   {msg.escalate && (
-                    <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold" style={{ color: "var(--warning)" }}>
-                      ⚠️ Escalated to human agent
+                    <div className="flex items-center gap-1.5 mb-3 text-xs font-bold uppercase tracking-wider display-font" style={{ color: "var(--warning)" }}>
+                      Escalated to human
                     </div>
                   )}
                   <div style={{ lineHeight: 1.6 }}>{msg.text}</div>
                   {msg.role === "agent" && (
-                    <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: "1px solid var(--border-soft)" }}>
-                      {msg.time && (
-                        <span className="text-[10px] mono" style={{ color: "var(--subtle)" }}>
-                          {msg.time}s
-                        </span>
-                      )}
-                      {msg.confidence !== undefined && (
-                        <span className="text-[10px] mono" style={{ color: msg.confidence > 0.8 ? "var(--accent)" : "var(--warning)" }}>
-                          {Math.round(msg.confidence * 100)}% conf
-                        </span>
-                      )}
-                      {msg.tools && msg.tools.length > 0 && (
-                        <span className="text-[10px] mono" style={{ color: "var(--subtle)" }}>
-                          {msg.tools.length} tool{msg.tools.length !== 1 ? "s" : ""}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid var(--border-soft)" }}>
+                      {msg.time && <span className="text-[10px] mono font-medium" style={{ color: "var(--muted)" }}>{msg.time}s</span>}
+                      {msg.confidence !== undefined && <span className="text-[10px] mono font-medium" style={{ color: msg.confidence > 0.8 ? "var(--petronas-teal)" : "var(--mclaren-papaya)" }}>{Math.round(msg.confidence * 100)}% CONF</span>}
+                      {msg.tools && msg.tools.length > 0 && <span className="text-[10px] mono font-medium" style={{ color: "var(--muted)" }}>{msg.tools.length} CALLS</span>}
                     </div>
                   )}
                 </div>
               </div>
             ))}
-
             {isTyping && <TypingIndicator />}
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="px-4 py-3" style={{ borderTop: "1px solid var(--border)" }}>
-            <div className="flex gap-2">
+          <div className="p-4" style={{ borderTop: "1px solid var(--border)" }}>
+            <div className="flex gap-3">
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-                placeholder="Type a customer message..."
+                placeholder="Message the agent..."
                 disabled={isTyping}
-                className="flex-1 rounded-lg px-4 py-2.5 text-sm"
-                style={{
-                  background: "var(--surface-hover)",
-                  border: "1px solid var(--border)",
-                  color: "var(--ink)",
-                }}
+                className="flex-1 rounded-md px-4 py-3 text-sm transition-colors duration-200"
+                style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--ink)" }}
               />
-              <button
-                onClick={() => sendMessage(input)}
-                disabled={isTyping || !input.trim()}
-                className="btn-primary px-4 py-2.5 flex items-center"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
+              <button onClick={() => sendMessage(input)} disabled={isTyping || !input.trim()} className="btn-primary px-6">
+                Send
               </button>
             </div>
           </div>
         </div>
 
         {/* Reasoning Trace Panel */}
-        <div className="glass flex flex-col" style={{ height: 520 }}>
-          <div
-            className="flex items-center gap-2 px-5 py-3.5"
-            style={{ borderBottom: "1px solid var(--border)" }}
-          >
-            <span className="text-sm">🧠</span>
-            <span className="font-semibold text-sm" style={{ color: "var(--ink)" }}>Agent Reasoning Trace</span>
+        <div className="glass flex flex-col" style={{ height: 560 }}>
+          <div className="flex items-center px-6 py-4" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-hover)" }}>
+            <span className="font-bold text-xs uppercase tracking-wider display-font" style={{ color: "var(--ink)" }}>Reasoning Engine</span>
           </div>
 
-          <div className="flex-1 overflow-y-auto scroll px-5 py-4">
+          <div className="flex-1 overflow-y-auto scroll px-6 py-6">
             {!activeReasoning ? (
-              <div className="space-y-4">
-                <div className="text-center py-4">
-                  <div className="text-3xl mb-3">🤖</div>
-                  <p className="text-xs font-medium mb-6" style={{ color: "var(--muted)" }}>
-                    Send a message to see the agent&apos;s reasoning process
-                  </p>
-                </div>
-                <div className="space-y-2">
+              <div className="space-y-6">
+                <div className="space-y-3">
                   {[
-                    { label: "Model", value: "Claude Sonnet 4" },
-                    { label: "Retrieval", value: "Hybrid BM25 + Dense" },
-                    { label: "Tools", value: "Policy Lookup, Eligibility, Scheduling" },
-                    { label: "Guardrails", value: "PII Filter, Escalation Rules" },
-                    { label: "Latency Target", value: "< 3 seconds p95" },
+                    { label: "Model Architecture", value: "Hybrid Base + MoE" },
+                    { label: "Retrieval Strategy", value: "Vector + Keyword Search" },
+                    { label: "Active Tools", value: "CRM, Billing, Scheduling" },
+                    { label: "Safety Protocols", value: "PII Masking, Tone Filter" },
                   ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex justify-between items-center py-2 px-3 rounded-lg text-xs"
-                      style={{ background: "var(--surface-hover)" }}
-                    >
-                      <span className="font-medium" style={{ color: "var(--muted)" }}>{item.label}</span>
-                      <span className="mono font-medium" style={{ color: "var(--ink-soft)" }}>{item.value}</span>
+                    <div key={item.label} className="flex flex-col py-3 px-4 rounded-md text-xs border border-[var(--border)]" style={{ background: "var(--bg)" }}>
+                      <span className="font-bold uppercase tracking-wider mb-1 display-font" style={{ color: "var(--muted)", fontSize: "10px" }}>{item.label}</span>
+                      <span className="mono font-medium" style={{ color: "var(--ink)" }}>{item.value}</span>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 anim-in">
-                {/* Reasoning */}
+              <div className="space-y-6 anim-in">
                 {activeReasoning.reasoning && (
                   <div>
-                    <div className="text-[10px] font-bold tracking-wider mb-2" style={{ color: "var(--subtle)" }}>
-                      REASONING
-                    </div>
-                    <div
-                      className="text-xs leading-relaxed p-3 rounded-lg"
-                      style={{
-                        background: "var(--surface-hover)",
-                        color: "var(--ink-soft)",
-                        borderLeft: "3px solid var(--accent)",
-                      }}
-                    >
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2 display-font" style={{ color: "var(--muted)" }}>Internal Thought Process</div>
+                    <div className="text-sm leading-relaxed p-4 rounded-md" style={{ background: "var(--bg)", color: "var(--ink)", borderLeft: "3px solid var(--ink)" }}>
                       {activeReasoning.reasoning}
                     </div>
                   </div>
                 )}
 
-                {/* Tool Calls */}
                 {activeReasoning.tools && activeReasoning.tools.length > 0 && (
                   <div>
-                    <div className="text-[10px] font-bold tracking-wider mb-2" style={{ color: "var(--subtle)" }}>
-                      TOOL CALLS ({activeReasoning.tools.length})
-                    </div>
-                    <div className="space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-widest mb-2 display-font" style={{ color: "var(--muted)" }}>Tool Executions</div>
+                    <div className="space-y-3">
                       {activeReasoning.tools.map((tool, j) => (
-                        <div
-                          key={j}
-                          className="rounded-lg p-3 text-xs anim-in"
-                          style={{
-                            background: "var(--surface-hover)",
-                            borderLeft: "3px solid var(--gradient-end)",
-                            animationDelay: `${j * 0.1}s`,
-                          }}
-                        >
-                          <div className="font-bold mono mb-1.5" style={{ color: "var(--ink)" }}>
-                            🔧 {tool.name}
-                          </div>
-                          <div className="mb-1">
-                            <span className="font-semibold" style={{ color: "var(--muted)" }}>Input: </span>
-                            <span className="mono" style={{ color: "var(--ink-soft)" }}>{tool.input}</span>
-                          </div>
-                          <div>
-                            <span className="font-semibold" style={{ color: "var(--muted)" }}>Result: </span>
-                            <span className="mono" style={{ color: "var(--accent)" }}>{tool.result}</span>
-                          </div>
-                        </div>
+                         <div key={j} className="rounded-md p-4 text-xs anim-in border border-[var(--border)]" style={{ background: "var(--bg)", animationDelay: `${j * 0.1}s` }}>
+                           <div className="font-bold mono mb-2" style={{ color: "var(--ink)" }}>[EXECUTE] {tool.name}</div>
+                           <div className="mb-1.5"><span className="font-semibold" style={{ color: "var(--muted)" }}>Payload: </span><span className="mono" style={{ color: "var(--ink)" }}>{tool.input}</span></div>
+                           <div><span className="font-semibold" style={{ color: "var(--muted)" }}>Response: </span><span className="mono" style={{ color: "var(--petronas-teal)" }}>{tool.result}</span></div>
+                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Completion */}
-                <div
-                  className="flex items-center gap-2 p-3 rounded-lg text-xs"
-                  style={{
-                    background: activeReasoning.escalate ? "var(--warning-bg)" : "var(--accent-soft)",
-                    border: `1px solid ${activeReasoning.escalate ? "var(--warning)" : "var(--accent)"}`,
-                  }}
-                >
-                  <span>{activeReasoning.escalate ? "⚠️" : "✅"}</span>
-                  <span className="font-semibold" style={{ color: activeReasoning.escalate ? "var(--warning)" : "var(--accent)" }}>
-                    {activeReasoning.escalate ? "Escalated to human agent" : "Resolved autonomously"}
+                <div className="flex items-center gap-3 p-4 rounded-md text-xs border" style={{ background: activeReasoning.escalate ? "var(--warning-bg)" : "var(--accent-soft)", borderColor: activeReasoning.escalate ? "var(--mclaren-papaya)" : "var(--petronas-teal)" }}>
+                  <div className="h-2 w-2 rounded-full" style={{ background: activeReasoning.escalate ? "var(--mclaren-papaya)" : "var(--petronas-teal)" }} />
+                  <span className="font-bold uppercase tracking-wider display-font" style={{ color: activeReasoning.escalate ? "var(--mclaren-papaya)" : "var(--petronas-teal)" }}>
+                    {activeReasoning.escalate ? "Escalated" : "Resolved Autonomously"}
                   </span>
                   {activeReasoning.confidence !== undefined && (
-                    <span className="ml-auto mono font-bold" style={{ color: activeReasoning.confidence > 0.8 ? "var(--accent)" : "var(--warning)" }}>
-                      {Math.round(activeReasoning.confidence * 100)}%
+                    <span className="ml-auto mono font-bold" style={{ color: "var(--ink)" }}>
+                      {Math.round(activeReasoning.confidence * 100)}% CONFIDENCE
                     </span>
                   )}
                 </div>
@@ -422,45 +299,28 @@ export default function DashboardPage() {
       </div>
 
       {/* ROI Bar */}
-      <div className="glass mt-6 p-6 anim-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-bold" style={{ color: "var(--ink)" }}>Business Case</span>
-              <span className="text-xs" style={{ color: "var(--subtle)" }}>· The math.</span>
-            </div>
-          </div>
-          <span
-            className="text-xs font-bold tracking-wider px-3 py-1.5 rounded-lg"
-            style={{
-              background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-end))",
-              color: "white",
-            }}
-          >
-            76% MARGIN
+      <div className="glass mt-8 p-6 anim-in border-t-4" style={{ borderTopColor: "var(--ink)" }}>
+        <div className="flex items-center justify-between mb-6">
+          <span className="text-sm font-bold uppercase tracking-widest display-font" style={{ color: "var(--ink)" }}>Business Impact</span>
+          <span className="text-[10px] font-bold tracking-widest px-3 py-1.5 rounded bg-[var(--ink)] text-[var(--bg)] display-font">
+            76.3% MARGIN
           </span>
         </div>
-        <div className="grid grid-cols-4 gap-6 mt-4">
+        <div className="grid grid-cols-4 gap-6">
           {[
-            { label: "Human ticket cost", value: "$5.50", color: "var(--error)" },
-            { label: "SupportIQ cost", value: "$1.30", color: "var(--accent)" },
-            { label: "Savings per ticket", value: "$4.20", color: "var(--ink)" },
-            { label: "100K tickets/yr", value: "$420K saved", color: "var(--accent)" },
+            { label: "Human Cost (Avg)", value: "$5.50", color: "var(--ferrari-red)" },
+            { label: "AI Cost (Avg)", value: "$1.30", color: "var(--petronas-teal)" },
+            { label: "Net Savings", value: "$4.20", color: "var(--ink)" },
+            { label: "Annualized (100k)", value: "$420,000", color: "var(--ink)" },
           ].map((m) => (
             <div key={m.label}>
-              <div className="text-xs mb-1" style={{ color: "var(--muted)" }}>{m.label}</div>
-              <div className="text-lg font-bold mono" style={{ color: m.color }}>{m.value}</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5 display-font" style={{ color: "var(--muted)" }}>{m.label}</div>
+              <div className="text-2xl font-bold mono tracking-tight" style={{ color: m.color }}>{m.value}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="text-center mt-8 mb-4">
-        <p className="text-[10px] tracking-[0.2em] font-semibold" style={{ color: "var(--subtle)" }}>
-          PROTOTYPE · BUILT BY NEERAJ BHARGAV · FOR REVOLUTION VENTURE STUDIOS
-        </p>
-      </div>
     </div>
   );
 }

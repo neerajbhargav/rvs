@@ -13,9 +13,9 @@ interface PageConfig {
 }
 
 const COMP_META: Record<string, { icon: string; desc: string }> = {
-  about_me: { icon: "📝", desc: "Free-text field for users to describe themselves" },
-  address: { icon: "📍", desc: "Street, city, state, and ZIP code fields" },
-  birthdate: { icon: "📅", desc: "Date picker for date of birth" },
+  about_me: { icon: "📝", desc: "Text area for user bio" },
+  address: { icon: "📍", desc: "Street, city, state, ZIP fields" },
+  birthdate: { icon: "📅", desc: "Standard date picker" },
 };
 
 export default function AdminPage() {
@@ -43,7 +43,6 @@ export default function AdminPage() {
     const comp = sourceComps.find((c) => c.id === compId);
     if (!comp) return;
 
-    // Validate: can't leave a page empty
     if (sourceComps.length <= 1) {
       setError(`Cannot move — ${from === "page2" ? "Page 2" : "Page 3"} must have at least one component.`);
       return;
@@ -81,9 +80,9 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="animate-spin">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="animate-spin">
           <circle cx="12" cy="12" r="10" stroke="var(--border)" strokeWidth="3" />
-          <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--ink)" strokeWidth="3" strokeLinecap="round" />
         </svg>
       </div>
     );
@@ -92,36 +91,32 @@ export default function AdminPage() {
   const renderPage = (pageKey: "page2" | "page3", pageNum: number) => {
     const comps = config?.[pageKey] || [];
     const otherPage = pageKey === "page2" ? 3 : 2;
+    // Use F1 accents
+    const accentColor = pageNum === 2 ? "var(--petronas-teal)" : "var(--ferrari-red)";
 
     return (
-      <div className="anim-in" style={{ animationDelay: `${pageNum * 0.1}s` }}>
-        <div className="flex items-center gap-2 mb-4">
-          <span
-            className="text-xs font-bold px-2 py-0.5 rounded-md"
-            style={{
-              background: "var(--accent-soft)",
-              color: "var(--accent)",
-            }}
-          >
-            PAGE {pageNum}
-          </span>
-          <span className="text-sm" style={{ color: "var(--muted)" }}>
-            {comps.length} component{comps.length !== 1 ? "s" : ""}
+      <div className="anim-in glass p-6" style={{ animationDelay: `${pageNum * 0.1}s`, borderLeft: `3px solid ${accentColor}` }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold display-font" style={{ color: "var(--ink)" }}>
+            Page {pageNum}
+          </h2>
+          <span className="text-xs font-semibold px-2 py-1 rounded" style={{ background: "var(--surface-hover)", color: "var(--muted)" }}>
+            {comps.length} field{comps.length !== 1 ? "s" : ""}
           </span>
         </div>
 
         <div className="space-y-3">
           {comps.map((comp) => {
-            const meta = COMP_META[comp.type] || { icon: "📦", desc: "Unknown component" };
+            const meta = COMP_META[comp.type] || { icon: "📦", desc: "Field component" };
             return (
               <div
                 key={comp.id}
-                className="glass glass-hover p-5 flex items-center justify-between"
+                className="flex items-center justify-between p-4 rounded-md bg-[var(--bg)] border border-[var(--border)] transition-colors duration-200 hover:border-[var(--muted)]"
               >
                 <div className="flex items-center gap-4">
-                  <span className="text-2xl">{meta.icon}</span>
+                  <span className="text-xl">{meta.icon}</span>
                   <div>
-                    <h3 className="font-semibold text-sm" style={{ color: "var(--ink)" }}>
+                    <h3 className="font-semibold text-sm display-font" style={{ color: "var(--ink)" }}>
                       {comp.label}
                     </h3>
                     <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
@@ -131,18 +126,14 @@ export default function AdminPage() {
                 </div>
                 <button
                   onClick={() => moveComponent(comp.id, pageKey)}
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200"
+                  className="text-xs font-semibold px-3 py-1.5 rounded transition-all duration-200 active:scale-95"
                   style={{
-                    color: "var(--accent)",
-                    background: "var(--accent-soft)",
-                    border: "1px solid transparent",
+                    color: "var(--ink)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--accent)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "transparent";
-                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--ink)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
                 >
                   Move to Page {otherPage} →
                 </button>
@@ -150,12 +141,9 @@ export default function AdminPage() {
             );
           })}
           {comps.length === 0 && (
-            <div
-              className="glass p-8 text-center"
-              style={{ borderStyle: "dashed" }}
-            >
+            <div className="p-6 text-center rounded-md border border-dashed border-[var(--border)]">
               <p className="text-sm" style={{ color: "var(--subtle)" }}>
-                No components assigned to this page
+                No components assigned
               </p>
             </div>
           )}
@@ -165,62 +153,43 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl px-6 py-16">
       {/* Header */}
-      <div className="mb-8 anim-in">
-        <div className="flex items-center gap-3 mb-2">
-          <span
-            className="text-[10px] font-bold tracking-widest px-2.5 py-1 rounded-md"
-            style={{
-              background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-end))",
-              color: "white",
-            }}
-          >
-            ADMIN
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>
-          Onboarding Configuration
+      <div className="mb-10 anim-in">
+        <h1 className="text-3xl font-bold display-font mb-2" style={{ color: "var(--ink)" }}>
+          Configuration
         </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-          Drag components between pages to customize the onboarding flow. Each page must have at least one component.
+        <p className="text-sm" style={{ color: "var(--muted)" }}>
+          Assign dynamic components to the onboarding flow. Each step must contain at least one field.
         </p>
       </div>
 
       {/* Error */}
       {error && (
-        <div
-          className="mb-6 rounded-lg px-4 py-3 text-sm font-medium anim-scale"
-          style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error)" }}
-        >
-          ⚠️ {error}
+        <div className="mb-6 rounded px-4 py-3 text-sm font-medium anim-fade flex items-center gap-2" style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error)" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {error}
         </div>
       )}
 
       {/* Pages */}
-      <div className="space-y-8 mb-8">
+      <div className="space-y-6 mb-8">
         {renderPage("page2", 2)}
         {renderPage("page3", 3)}
       </div>
 
       {/* Save */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="btn-primary flex items-center gap-2"
-        >
+      <div className="flex items-center gap-4 border-t border-[var(--border)] pt-8">
+        <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2">
           {saving ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="animate-spin">
-              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
-              <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
-            </svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="animate-spin"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3"/><path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round"/></svg>
           ) : null}
-          {saving ? "Saving..." : "Save Configuration"}
+          {saving ? "Saving..." : "Save Changes"}
         </button>
         {saved && (
-          <span className="text-sm font-semibold anim-scale" style={{ color: "var(--accent)" }}>
-            ✓ Saved!
+          <span className="text-sm font-semibold anim-fade flex items-center gap-1" style={{ color: "var(--accent)" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Saved successfully
           </span>
         )}
       </div>

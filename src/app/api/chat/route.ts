@@ -2,14 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Smart mock responses that simulate real AI agent behavior
 // To use real Claude API: set ANTHROPIC_API_KEY env variable
-const KNOWLEDGE_BASE = {
-  appointments: "Cancellations are free with 24+ hours notice. Within 24 hours: $25 fee. Rescheduling is always free.",
-  insurance: "We accept Aetna, Blue Cross, Cigna, and United Healthcare. Out-of-network visits: $89. In-network copays: therapy $25, primary care $20, prescriptions $10.",
-  prescriptions: "Standard refills are processed within 48 hours. Controlled substances require a new appointment with your provider.",
-  refunds: "Refunds are available within 7 days of service. Please provide your account email and date of service.",
-  hours: "Our virtual care team is available Monday–Friday 8am–8pm ET, Saturday 9am–5pm ET. AI support is available 24/7.",
-  privacy: "We are fully HIPAA-compliant. Your health data is encrypted and never shared with third parties.",
-};
+// KNOWLEDGE_BASE removed
+
 
 interface ToolCall {
   name: string;

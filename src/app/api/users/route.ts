@@ -40,9 +40,10 @@ export async function POST(req: NextRequest) {
       }
       throw err;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POST /api/users error:", error);
-    return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -52,8 +53,9 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(users);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("GET /api/users error:", error);
-    return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

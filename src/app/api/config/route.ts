@@ -10,8 +10,8 @@ export async function GET() {
       });
     }
 
-    const page2: any[] = [];
-    const page3: any[] = [];
+    const page2: { id: string; type: string; label: string }[] = [];
+    const page3: { id: string; type: string; label: string }[] = [];
 
     const pushComp = (type: string, label: string, val: number) => {
       const comp = { id: type, type, label };
@@ -24,9 +24,10 @@ export async function GET() {
     pushComp("birthdate", "Birthdate", config.birthdate);
 
     return NextResponse.json({ page2, page3 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("GET /api/config error:", error);
-    return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -65,8 +66,9 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json({ page2, page3 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("PUT /api/config error:", error);
-    return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
