@@ -9,7 +9,21 @@ export async function GET() {
         data: { id: "config", aboutMe: 2, address: 2, birthdate: 3 },
       });
     }
-    return NextResponse.json(config);
+
+    const page2: any[] = [];
+    const page3: any[] = [];
+
+    const pushComp = (type: string, label: string, val: number) => {
+      const comp = { id: type, type, label };
+      if (val === 2) page2.push(comp);
+      else if (val === 3) page3.push(comp);
+    };
+
+    pushComp("about_me", "About Me", config.aboutMe);
+    pushComp("address", "Address", config.address);
+    pushComp("birthdate", "Birthdate", config.birthdate);
+
+    return NextResponse.json({ page2, page3 });
   } catch (error: any) {
     console.error("GET /api/config error:", error);
     return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
@@ -18,42 +32,39 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { aboutMe, address, birthdate } = await req.json();
+    const { page2, page3 } = await req.json();
 
-    // Validate each value is 2 or 3
-    for (const [key, val] of Object.entries({ aboutMe, address, birthdate })) {
-      if (val !== 2 && val !== 3) {
-        return NextResponse.json(
-          { error: `${key} must be 2 or 3` },
-          { status: 400 }
-        );
-      }
+    if (!page2 || page2.length === 0) {
+      return NextResponse.json({ error: "Page 2 must have at least one component" }, { status: 400 });
+    }
+    if (!page3 || page3.length === 0) {
+      return NextResponse.json({ error: "Page 3 must have at least one component" }, { status: 400 });
     }
 
-    // Validate that both page 2 and page 3 have at least 1 component
-    const page2Components = [aboutMe, address, birthdate].filter((v) => v === 2).length;
-    const page3Components = [aboutMe, address, birthdate].filter((v) => v === 3).length;
+    let aboutMe = 0, address = 0, birthdate = 0;
 
-    if (page2Components === 0) {
-      return NextResponse.json(
-        { error: "Page 2 must have at least one component" },
-        { status: 400 }
-      );
+    for (const comp of page2 || []) {
+      if (comp.type === "about_me") aboutMe = 2;
+      if (comp.type === "address") address = 2;
+      if (comp.type === "birthdate") birthdate = 2;
     }
-    if (page3Components === 0) {
-      return NextResponse.json(
-        { error: "Page 3 must have at least one component" },
-        { status: 400 }
-      );
+    for (const comp of page3 || []) {
+      if (comp.type === "about_me") aboutMe = 3;
+      if (comp.type === "address") address = 3;
+      if (comp.type === "birthdate") birthdate = 3;
     }
 
-    const config = await prisma.pageConfig.upsert({
+    if (!aboutMe || !address || !birthdate) {
+      return NextResponse.json({ error: "All components must be assigned to a page" }, { status: 400 });
+    }
+
+    await prisma.pageConfig.upsert({
       where: { id: "config" },
       update: { aboutMe, address, birthdate },
       create: { id: "config", aboutMe, address, birthdate },
     });
 
-    return NextResponse.json(config);
+    return NextResponse.json({ page2, page3 });
   } catch (error: any) {
     console.error("PUT /api/config error:", error);
     return NextResponse.json({ error: String(error.message || error) }, { status: 500 });
