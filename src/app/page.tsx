@@ -25,6 +25,14 @@ interface UserData {
   birthdate?: string;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const getMaxDOB = () => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().split("T")[0];
+};
+
 const STEPS = ["Account", "Profile", "Details", "Complete"];
 
 function StepIndicator({ current, setStep }: { current: number, setStep: (s: number) => void }) {
@@ -80,39 +88,71 @@ function DynamicField({ comp, formData, setFormData }: { comp: ComponentConfig; 
     case "about_me":
       return (
         <div className="anim-in">
-          <label className={labelClass}>{comp.label}</label>
+          <label className={labelClass}>{comp.label} <span className="text-gray-400 font-normal normal-case tracking-normal">(Optional)</span></label>
           <textarea
             value={formData.aboutMe || ""}
             onChange={(e) => setFormData((p) => ({ ...p, aboutMe: e.target.value }))}
             rows={4}
             className={inputClass}
             style={{ resize: "vertical" }}
+            placeholder="Tell us a bit about yourself..."
           />
         </div>
       );
     case "address":
+      const handleAutofill = async () => {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+            const data = await res.json();
+            if (data && data.address) {
+              setFormData((p) => ({
+                ...p,
+                street: `${data.address.house_number || ""} ${data.address.road || ""}`.trim() || data.address.suburb || "",
+                city: data.address.city || data.address.town || data.address.village || "",
+                state: data.address.state || "",
+                zip: data.address.postcode || "",
+              }));
+            }
+          } catch (e) {
+            console.error("Geocoding failed", e);
+          }
+        });
+      };
+
       return (
         <div className="space-y-4 anim-in">
-          <label className={labelClass}>{comp.label}</label>
+          <div className="flex items-center justify-between">
+            <label className={labelClass} style={{ marginBottom: 0 }}>{comp.label}</label>
+            <button 
+              onClick={handleAutofill} 
+              className="text-[10px] font-bold text-[var(--petronas-teal)] uppercase tracking-wider flex items-center gap-1 hover:text-[var(--ink)] transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              Auto-fill from Location
+            </button>
+          </div>
           <input
             value={formData.street || ""}
             onChange={(e) => setFormData((p) => ({ ...p, street: e.target.value }))}
-            placeholder="Street Address"
+            placeholder="123 Innovation Drive"
             className={inputClass}
           />
           <div className="grid grid-cols-3 gap-4">
             <input value={formData.city || ""} onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))} placeholder="City" className={inputClass} />
             <input value={formData.state || ""} onChange={(e) => setFormData((p) => ({ ...p, state: e.target.value }))} placeholder="State" className={inputClass} />
-            <input value={formData.zip || ""} onChange={(e) => setFormData((p) => ({ ...p, zip: e.target.value }))} placeholder="ZIP" className={inputClass} />
+            <input value={formData.zip || ""} onChange={(e) => setFormData((p) => ({ ...p, zip: e.target.value }))} placeholder="ZIP Code" className={inputClass} />
           </div>
         </div>
       );
     case "birthdate":
       return (
         <div className="anim-in">
-          <label className={labelClass}>{comp.label}</label>
+          <label className={labelClass}>{comp.label} <span className="text-gray-400 font-normal normal-case tracking-normal">(Must be 18+)</span></label>
           <input
             type="date"
+            max={getMaxDOB()}
             value={formData.birthdate || ""}
             onChange={(e) => setFormData((p) => ({ ...p, birthdate: e.target.value }))}
             className={inputClass}
@@ -185,8 +225,12 @@ export default function OnboardingPage() {
   };
 
   const handleStep1 = async () => {
-    if (!email || !password) { setError("Email and password required."); return; }
-    setLoading(true); setError("");
+    setError("");
+    if (!email || !password) { setError("Email and password are required."); return; }
+    if (!EMAIL_REGEX.test(email)) { setError("Please enter a valid email address."); return; }
+    if (password.length < 8 && password !== "********") { setError("Password must be at least 8 characters."); return; }
+
+    setLoading(true);
 
     try {
       const streamPromise = simulateStream([
